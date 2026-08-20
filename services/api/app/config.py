@@ -12,9 +12,12 @@ class Settings(BaseSettings):
     s3_secret_key: str = "mori-dev-secret"
     s3_bucket: str = "mori-media"
 
-    jwt_secret: str = "dev-secret-change-me"
+    jwt_secret: str = "dev-secret-change-me-before-deploying-anywhere-real"
     access_token_ttl_minutes: int = 15
     refresh_token_ttl_days: int = 30
+
+    cors_origins: list[str] = ["http://localhost:3010"]
+    cookie_secure: bool = False
 
 
 settings = Settings()

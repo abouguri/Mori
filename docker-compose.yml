@@ -54,6 +54,8 @@ services:
       POSTGRES_USER: mori
       POSTGRES_PASSWORD: mori
       POSTGRES_DB: mori
+    ports:
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
