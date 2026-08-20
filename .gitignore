@@ -1,0 +1,34 @@
+# spec files — never pushed
+AGENT.html
+AGENT.md
+
+# node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+
+# docker
+minio-data/
+pgdata/
