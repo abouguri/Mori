@@ -35,14 +35,29 @@ class ReviewOutcome(NamedTuple):
     last_review: datetime
 
 
+# fsrs.Scheduler.review_card asserts on a Review/Relearning card with no
+# stability/difficulty — confirmed directly, it's not just untested. Tier 1
+# seeding (§08.3, importer/normalize.py::seed_fsrs_tier1) means this
+# shouldn't happen for imported cards, but a fallback beats a 500 if some
+# future path ever leaves one unseeded. Neutral guesses, not tuned to
+# anything — a real review immediately supersedes them.
+_FALLBACK_STABILITY = 1.0
+_FALLBACK_DIFFICULTY = 5.0
+
+
 def _to_fsrs_card(card: Card) -> fsrs.Card:
     if card.state == 0:  # never reviewed — nothing to carry over
         return fsrs.Card()
+    stability = card.stability
+    difficulty = card.difficulty
+    if card.state in (2, 3) and (stability is None or difficulty is None):
+        stability = stability if stability is not None else _FALLBACK_STABILITY
+        difficulty = difficulty if difficulty is not None else _FALLBACK_DIFFICULTY
     return fsrs.Card(
         state=fsrs.State(card.state),
         step=card.learning_step if card.state in (1, 3) else None,
-        stability=card.stability,
-        difficulty=card.difficulty,
+        stability=stability,
+        difficulty=difficulty,
         due=card.due,
         last_review=card.last_review,
     )

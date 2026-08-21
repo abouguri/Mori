@@ -97,6 +97,7 @@ def build_legacy_apkg(
     *,
     basic_notes: list[tuple[str, str]] = (),
     cloze_notes: list[str] = (),
+    mature_notes: list[tuple[str, str, int, int, int]] = (),
     media: dict[str, bytes] | None = None,
     deck_name: str = "Japanese\x1fN5",
 ) -> None:
@@ -105,6 +106,9 @@ def build_legacy_apkg(
     `basic_notes` is a list of (front, back) pairs, each becoming one note
     with one card. `cloze_notes` is a list of field texts (each containing
     exactly one `{{c1::...}}` span), each becoming one note with one card.
+    `mature_notes` is (front, back, ivl, factor, lapses) — a review-state
+    card already due, carrying real Anki scheduling history for testing §08.3
+    Tier 1 seeding (as opposed to basic_notes' brand-new cards).
     """
     now = int(time.time())
     crt = now - 86400
@@ -117,7 +121,7 @@ def build_legacy_apkg(
     decks = {
         str(DEFAULT_DECK_ID): {"id": DEFAULT_DECK_ID, "name": "Default", "conf": 1},
     }
-    if basic_notes:
+    if basic_notes or mature_notes:
         models[str(BASIC_MODEL_ID)] = _basic_model()
     if cloze_notes:
         models[str(CLOZE_MODEL_ID)] = _cloze_model()
@@ -144,6 +148,20 @@ def build_legacy_apkg(
         conn.execute(
             "INSERT INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (card_id, note_id, target_deck_id, 0, now, -1, 0, 0, note_id, 0, 2500, 0, 0, 0, 0, 0, 0, ""),
+        )
+        note_id += 1
+        card_id += 1
+
+    for i, (front, back, ivl, factor, lapses) in enumerate(mature_notes):
+        flds = f"{front}\x1f{back}"
+        conn.execute(
+            "INSERT INTO notes VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (note_id, f"guid-mature-{i}", BASIC_MODEL_ID, now, -1, "", flds, front, 0, 0, ""),
+        )
+        # type=2 review, queue=2 review, due=0 -> due at col.crt (already overdue).
+        conn.execute(
+            "INSERT INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (card_id, note_id, target_deck_id, 0, now, -1, 2, 2, 0, ivl, factor, 8, lapses, 0, 0, 0, 0, ""),
         )
         note_id += 1
         card_id += 1

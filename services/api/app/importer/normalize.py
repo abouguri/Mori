@@ -41,6 +41,25 @@ def _mori_queue(anki_queue: int) -> int:
     return 0
 
 
+def seed_fsrs_tier1(card: LegacyCard) -> tuple[float | None, float | None]:
+    """§08.3 Tier 1 heuristic seeding, run at import since it needs Anki's
+    ivl/factor/lapses — none of which live on Mori's own Card row once
+    imported. New cards get NULL and let FSRS initialise them on first
+    review, as the spec says.
+
+    The spec scopes this to state=2 (review) cards only, but relearning
+    (state=3) crashes the scheduler just as hard with unseeded stability —
+    confirmed directly against the fsrs library — so this covers both,
+    extending the formula rather than leaving a state that FSRS can't
+    actually schedule.
+    """
+    if card.type not in (AnkiCardType.REVIEW, AnkiCardType.RELEARNING):
+        return None, None
+    stability = float(max(card.ivl, 1))
+    difficulty = min(10.0, max(1.0, 11 - (card.factor / 1000) * 2.5 + card.lapses * 0.15))
+    return stability, difficulty
+
+
 async def import_note_types(
     db: AsyncSession, user_id: uuid.UUID, models: dict[str, dict[str, Any]]
 ) -> dict[str, uuid.UUID]:
@@ -170,6 +189,7 @@ async def import_cards(
             skipped += 1
             continue
         deck_id = deck_id_map.get(str(card.did), default_deck_id)
+        stability, difficulty = seed_fsrs_tier1(card)
 
         stmt = (
             insert(Card)
@@ -182,6 +202,8 @@ async def import_cards(
                 queue=_mori_queue(card.queue),
                 due=to_absolute_due(card.type, card.due, col_crt),
                 new_position=card.due if card.type == AnkiCardType.NEW else None,
+                stability=stability,
+                difficulty=difficulty,
                 reps=card.reps,
                 lapses=card.lapses,
                 anki_card_id=card.id,

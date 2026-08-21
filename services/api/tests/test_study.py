@@ -183,3 +183,45 @@ async def test_answer_rejects_future_answered_at(client: AsyncClient, tmp_path: 
         },
     )
     assert response.status_code == 400
+
+
+async def test_answering_an_imported_mature_card_does_not_crash(
+    client: AsyncClient, tmp_path: Path
+) -> None:
+    # Regression test: a review-state imported card with unseeded
+    # stability/difficulty crashes fsrs.Scheduler.review_card with an
+    # AssertionError (confirmed directly against the library) — this is
+    # exactly what §08.3 Tier 1 seeding at import exists to prevent.
+    await client.post(
+        "/auth/register", json={"email": "ada@example.com", "password": "correct horse battery"}
+    )
+    apkg_path = tmp_path / "mature.apkg"
+    build_legacy_apkg(
+        apkg_path,
+        mature_notes=[("mature front", "mature back", 30, 2200, 1)],
+        deck_name="Mature",
+    )
+    with apkg_path.open("rb") as f:
+        created = await client.post("/imports", files={"file": (apkg_path.name, f, "application/zip")})
+    await run_import({}, created.json()["id"])
+
+    decks = (await client.get("/decks")).json()
+    deck_id = next(d for d in decks if d["name"] == "Mature")["id"]
+
+    start = (await client.get(f"/decks/{deck_id}/study")).json()
+    assert start["card"] is not None
+    assert start["card"]["state"] == 2  # imported as review, not new
+    assert start["card"]["stability"] is not None  # seeded, not NULL
+
+    response = await client.post(
+        f"/cards/{start['card']['id']}/answer",
+        json={
+            "rating": 3,
+            "duration_ms": 2000,
+            "answered_at": datetime.now(UTC).isoformat(),
+            "deck_id": deck_id,
+        },
+        headers={"Idempotency-Key": str(uuid.uuid4())},
+    )
+    assert response.status_code == 200
+    assert response.json()["card"]["state"] == 2  # stayed in review on a Good rating

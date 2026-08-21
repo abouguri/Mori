@@ -50,6 +50,9 @@ export default function DeckPreviewPage() {
           <Link href={`/study/${params.id}`} className="text-[var(--color-good)] hover:opacity-80">
             study this deck →
           </Link>
+          <Link href={`/decks/${params.id}/stats`} className="hover:text-[var(--color-chalk)]">
+            stats
+          </Link>
           <Link href="/decks" className="hover:text-[var(--color-chalk)]">
             ← decks
           </Link>

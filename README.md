@@ -81,6 +81,14 @@ scheduling, sibling burying, undo, and keyboard shortcuts throughout.
 
 <img src="docs/screenshots/review.png" width="70%" alt="Review screen with the interval ribbon and four rating buttons after revealing an answer">
 
+**Stats**
+
+Retention rate, a 30-day review history, and a 30-day due forecast per
+deck — so an imported deck's real scheduling maturity is visible, not
+just guessed at.
+
+<img src="docs/screenshots/stats.png" width="60%" alt="Stats screen showing retention rate and two 30-day bar charts">
+
 ## Status
 
 Early build. Shipped so far:
@@ -91,6 +99,7 @@ Early build. Shipped so far:
 - [x] Legacy `.apkg` import — notes, cards, media, deck hierarchy, background worker with live progress
 - [x] Card renderer — templates, filters, conditionals, cloze, media rewriting, LaTeX, sandboxed no-script iframe
 - [x] Review loop — FSRS scheduling, queue builder with deck-limit inheritance, sibling burying, undo, keyboard shortcuts, interval ribbon
+- [x] FSRS seeding for imported decks + per-deck stats (retention, review history, due forecast)
 - [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
 - [ ] Offline support
 

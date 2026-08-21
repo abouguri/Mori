@@ -118,6 +118,17 @@ export interface AnswerResponse {
   queue: QueueCounts;
 }
 
+export interface DailyCount {
+  date: string;
+  count: number;
+}
+
+export interface DeckStats {
+  reviews_per_day: DailyCount[];
+  due_forecast: DailyCount[];
+  retention_rate: number | null;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -174,4 +185,6 @@ export const api = {
   suspendCard: (cardId: string) => request<CardState>(`/cards/${cardId}/suspend`, { method: "POST" }),
 
   buryCard: (cardId: string) => request<CardState>(`/cards/${cardId}/bury`, { method: "POST" }),
+
+  deckStats: (deckId: string) => request<DeckStats>(`/decks/${deckId}/stats`),
 };
