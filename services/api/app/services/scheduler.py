@@ -63,13 +63,27 @@ def _to_fsrs_card(card: Card) -> fsrs.Card:
     )
 
 
-def review_card(card: Card, rating: int, review_datetime: datetime, duration_ms: int) -> ReviewOutcome:
+def review_card(
+    card: Card,
+    rating: int,
+    review_datetime: datetime,
+    duration_ms: int,
+    parameters: list[float] | None = None,
+) -> ReviewOutcome:
     """Runs one FSRS review. Pure w.r.t. `card` — returns the new field values,
-    doesn't mutate it, so callers can snapshot the "before" state first."""
+    doesn't mutate it, so callers can snapshot the "before" state first.
+
+    `parameters` is a user's own tuned weights from the Tier 2 optimizer
+    (§08.4, users.fsrs_params) — falls back to the library default scheduler
+    when absent (new users, or users below the review-count floor).
+    """
     fsrs_card = _to_fsrs_card(card)
     was_review = card.state == 2
+    active_scheduler = (
+        fsrs.Scheduler(parameters=parameters, enable_fuzzing=False) if parameters else _scheduler
+    )
 
-    updated, _log = _scheduler.review_card(
+    updated, _log = active_scheduler.review_card(
         fsrs_card, _RATING_MAP[rating], review_datetime, duration_ms
     )
 

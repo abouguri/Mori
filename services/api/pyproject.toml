@@ -32,6 +32,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# §08.4 Tier 2 FSRS parameter tuning. Pulls in torch/pandas/scikit-learn —
+# installed only in the worker image (services/api/Dockerfile), never the
+# API image, since it's only ever invoked from the isolated subprocess in
+# app/workers/optimize_subprocess.py.
+optimizer = [
+  "fsrs-optimizer>=6.5",
+]
 dev = [
   "pytest>=8.3",
   "pytest-asyncio>=0.25",
@@ -39,10 +46,13 @@ dev = [
   "ruff>=0.8",
   "mypy>=1.14",
   "hypothesis>=6.122",
+  "grpcio-tools>=1.68",  # `make proto` — regenerates app/importer/proto/anki/*_pb2.py
 ]
 
 [tool.ruff]
 line-length = 100
+# Generated protobuf code — never hand-edited, regenerated via `make proto`.
+extend-exclude = ["app/importer/proto/anki/*_pb2.py"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Cookie", "fastapi.Query", "fastapi.Header"]

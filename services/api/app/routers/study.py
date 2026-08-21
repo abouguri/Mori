@@ -148,7 +148,9 @@ async def answer_card(
     state_before = card.state
     snapshot = _snapshot(card)
 
-    outcome = scheduler.review_card(card, body.rating, body.answered_at, body.duration_ms)
+    outcome = scheduler.review_card(
+        card, body.rating, body.answered_at, body.duration_ms, parameters=user.fsrs_params
+    )
     card.state = outcome.state
     card.queue = 0
     card.due = outcome.due

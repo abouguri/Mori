@@ -1,8 +1,13 @@
+import io
 import json
 import re
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
+
+import zstandard
+from anki import import_export_pb2
+from google.protobuf.message import DecodeError
 
 from app.importer import errors
 
@@ -24,6 +29,53 @@ class OpenedApkg:
     media: dict[str, Path]
 
 
+def _bounded_zstd_decompress(compressed: bytes) -> bytes:
+    """§05 zip-bomb defence extends to the zstd layer too: a forged frame
+    header can claim any content size it likes, so a one-shot `.decompress()`
+    call trusts that claim for its buffer allocation rather than bounding
+    it — streaming decompression with our own running-total check is what
+    actually enforces the 2 GB cap, independent of what the frame claims."""
+    dctx = zstandard.ZstdDecompressor()
+    chunks: list[bytes] = []
+    total = 0
+    try:
+        with dctx.stream_reader(io.BytesIO(compressed)) as reader:
+            while True:
+                chunk = reader.read(65536)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > _MAX_UNCOMPRESSED_BYTES:
+                    raise errors.too_large()
+                chunks.append(chunk)
+    except zstandard.ZstdError as exc:
+        raise errors.corrupt_db() from exc
+    return b"".join(chunks)
+
+
+def _decode_legacy_media_map(raw: bytes) -> dict[str, str]:
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+
+
+def _decode_modern_media_map(raw: bytes) -> dict[str, str]:
+    """§05: modern packages' `media` entry is a protobuf MediaEntries message —
+    entries keyed by their zip entry number via `legacy_zip_filename`, same
+    role JSON's `{"0": "cat.jpg"}` plays for legacy packages."""
+    entries = import_export_pb2.MediaEntries()
+    try:
+        entries.ParseFromString(raw)
+    except DecodeError:
+        return {}
+    return {
+        str(entry.legacy_zip_filename): entry.name
+        for entry in entries.entries
+        if entry.HasField("legacy_zip_filename")
+    }
+
+
 def open_apkg(zip_path: Path, extract_dir: Path) -> OpenedApkg:
     try:
         zf = zipfile.ZipFile(zip_path)
@@ -41,10 +93,11 @@ def open_apkg(zip_path: Path, extract_dir: Path) -> OpenedApkg:
         db_name = next((name for name in _PROBE_ORDER if name in names), None)
         if db_name is None:
             raise errors.no_collection_db()
-        if db_name == "collection.anki21b":
-            raise errors.unsupported_schema()  # modern format lands in M7
 
+        is_modern = db_name == "collection.anki21b"
         db_bytes = zf.read(db_name)
+        if is_modern:
+            db_bytes = _bounded_zstd_decompress(db_bytes)
         if not db_bytes.startswith(_SQLITE_MAGIC):
             raise errors.corrupt_db()
 
@@ -53,10 +106,12 @@ def open_apkg(zip_path: Path, extract_dir: Path) -> OpenedApkg:
 
         media_map: dict[str, str] = {}
         if "media" in names:
-            try:
-                media_map = json.loads(zf.read("media"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                media_map = {}
+            raw_media = zf.read("media")
+            media_map = (
+                _decode_modern_media_map(raw_media)
+                if is_modern
+                else _decode_legacy_media_map(raw_media)
+            )
 
         media_dir = extract_dir / "media"
         media_dir.mkdir(exist_ok=True)
@@ -69,4 +124,6 @@ def open_apkg(zip_path: Path, extract_dir: Path) -> OpenedApkg:
             local_path.write_bytes(zf.read(info))
             media[real_name] = local_path
 
-        return OpenedApkg(variant="legacy", db_path=db_path, media=media)
+        return OpenedApkg(
+            variant="modern" if is_modern else "legacy", db_path=db_path, media=media
+        )

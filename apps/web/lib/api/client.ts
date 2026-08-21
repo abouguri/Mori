@@ -129,6 +129,13 @@ export interface DeckStats {
   retention_rate: number | null;
 }
 
+export interface OptimizeJob {
+  id: string;
+  status: "queued" | "running" | "done" | "insufficient_data" | "failed";
+  review_count: number | null;
+  error_detail: string | null;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -190,4 +197,8 @@ export const api = {
   buryCard: (cardId: string) => request<CardState>(`/cards/${cardId}/bury`, { method: "POST" }),
 
   deckStats: (deckId: string) => request<DeckStats>(`/decks/${deckId}/stats`),
+
+  createOptimizeJob: () => request<OptimizeJob>("/users/me/fsrs-optimize", { method: "POST" }),
+
+  getOptimizeJob: (id: string) => request<OptimizeJob>(`/users/me/fsrs-optimize/${id}`),
 };

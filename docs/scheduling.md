@@ -58,8 +58,43 @@ New (never-reviewed) cards get `NULL` stability/difficulty and let FSRS
 initialize them normally on first review — that path was always safe,
 since a fresh `fsrs.Card()` doesn't carry the assertion's precondition.
 
-## Tier 2 (M7, not built yet)
+## Tier 2 (M7)
 
-Feed imported `review_logs` into the FSRS optimizer, derive per-user
-parameters, store in `users.fsrs_params`, replay history for true
-stability/difficulty. Needs ≥ 400 reviews to mean anything.
+`POST /users/me/fsrs-optimize` enqueues an ARQ job (`app/workers/optimize_job.py`)
+that feeds a user's `review_logs` into the real
+[`fsrs-optimizer`](https://pypi.org/project/FSRS-Optimizer/) package and
+stores the resulting 21-parameter set in `users.fsrs_params`. Below 400
+reviews (`MIN_REVIEWS_FOR_OPTIMIZATION`, `app/services/fsrs_optimize.py`)
+the job reports `insufficient_data` with the actual count instead of running
+— training on less data than that doesn't converge to anything meaningful.
+`GET /users/me/fsrs-optimize/{id}` polls status.
+
+`scheduler.review_card()` takes an optional `parameters` argument; `study.py`
+passes the current user's `fsrs_params` (falling back to the library's
+default weights when the user has none yet, e.g. new accounts or accounts
+below the review floor).
+
+**Why a subprocess, not a function call.** `fsrs-optimizer`'s public API is
+built for CLI/notebook use: it reads `./revlog.csv` and writes
+`./revlog_history.tsv` and friends relative to the process's *current
+working directory*, and carries module-level global state (`S_MIN`). None of
+that is safe to share across concurrent optimization jobs running in the
+same worker process. `app/workers/optimize_subprocess.py` runs the real
+pipeline — `create_time_series` → `define_model` → `initialize_parameters` →
+`train` — in a fresh Python interpreter per job, launched with its `cwd` set
+to a per-job temp directory that `fsrs_optimize.py` populates with the CSV
+first and reads `result.json` back from after. See `AGENT.html` §08's M7
+correction for the full writeup, including why the dependency (torch,
+~200 MB CPU-only vs. 1 GB+ if it resolves the CUDA build) is installed only
+in the worker image, never the API image.
+
+**Gotcha, found only by testing against the real Docker stack:** don't pass
+`cwd=` to the subprocess launch itself. The worker image's editable install
+only resolves `app.*` imports because the container's default working
+directory happens to be `/app` — its actual editable-install path mapping is
+empty, since `pip install -e .` runs in the Dockerfile before `COPY . .`
+copies `app/` in. `python -m app.workers.optimize_subprocess` needs that
+default cwd to find its own module; the script does `os.chdir()` into the
+job's temp directory itself, after `-m` has already resolved it. This passed
+`pytest` cleanly against the host dev venv (which has a real absolute-path
+mapping) and only broke in the actual worker container.

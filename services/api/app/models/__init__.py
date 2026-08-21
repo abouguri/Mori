@@ -5,6 +5,7 @@ from app.models.import_job import ImportJob, ImportStatus
 from app.models.media_file import MediaFile
 from app.models.note import Note
 from app.models.note_type import CardTemplate, NoteType, NoteTypeField
+from app.models.optimize_job import OptimizeJob, OptimizeStatus
 from app.models.review_log import ReviewLog
 from app.models.user import User
 
@@ -19,6 +20,8 @@ __all__ = [
     "Note",
     "NoteType",
     "NoteTypeField",
+    "OptimizeJob",
+    "OptimizeStatus",
     "ReviewLog",
     "User",
 ]

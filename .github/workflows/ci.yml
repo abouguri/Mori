@@ -78,3 +78,15 @@ jobs:
       - run: ruff check .
       - run: alembic upgrade head
       - run: pytest
+      # §08.4 Tier 2 FSRS tuning runs the real fsrs-optimizer in an isolated
+      # subprocess (app/workers/optimize_subprocess.py) — only the worker
+      # image installs it (services/api/Dockerfile), so it's exercised here
+      # as a separate, explicit step rather than in the default `pytest`
+      # run above, which stays fast and dependency-light. CPU-only torch
+      # first, same as the worker image build, to avoid pulling the
+      # multi-GB CUDA build.
+      - name: Install FSRS optimizer extra
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[optimizer]"
+      - run: pytest tests/test_fsrs_optimize.py

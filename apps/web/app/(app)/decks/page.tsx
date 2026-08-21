@@ -62,6 +62,9 @@ export default function DecksPage() {
           <Link href="/import" className="hover:text-[var(--color-chalk)]">
             import
           </Link>
+          <Link href="/settings" className="hover:text-[var(--color-chalk)]">
+            settings
+          </Link>
           <span>{email}</span>
           <button type="button" onClick={handleLogout} className="hover:text-[var(--color-chalk)]">
             sign out

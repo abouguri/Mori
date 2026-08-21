@@ -111,7 +111,7 @@ Early build. Shipped so far:
 - [x] Review loop — FSRS scheduling, queue builder with deck-limit inheritance, sibling burying, undo, keyboard shortcuts, interval ribbon
 - [x] FSRS seeding for imported decks + per-deck stats (retention, review history, due forecast)
 - [x] Offline support — Dexie prefetch, buffered answers, replay on reconnect
-- [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
+- [x] Modern `.apkg` format (schema v18, zstd, protobuf) + FSRS parameter tuning from review history
 
 ## Running it
 

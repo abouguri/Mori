@@ -35,7 +35,10 @@ services:
         condition: service_started
 
   worker:
-    build: ./services/api
+    build:
+      context: ./services/api
+      args:
+        WITH_OPTIMIZER: "true"
     command: ["arq", "app.workers.tasks.WorkerSettings"]
     volumes:
       - ./services/api:/app

@@ -7,7 +7,7 @@ from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import async_session
-from app.importer import apkg, legacy, normalize
+from app.importer import apkg, legacy, modern, normalize
 from app.importer.errors import ImportFailed, internal
 from app.importer.media import import_media_files
 from app.models.import_job import ImportJob, ImportStatus
@@ -56,7 +56,10 @@ async def _run_import(db: AsyncSession, job: ImportJob) -> None:
         job.progress = 10
         await db.commit()
 
-        collection = legacy.open_legacy_collection(opened.db_path)
+        open_collection = (
+            modern.open_modern_collection if opened.variant == "modern" else legacy.open_legacy_collection
+        )
+        collection = open_collection(opened.db_path)
         try:
             note_type_map = await normalize.import_note_types(db, job.user_id, collection.models)
             deck_map = await normalize.import_decks(
@@ -109,7 +112,7 @@ async def _run_import(db: AsyncSession, job: ImportJob) -> None:
         media_imported, media_skipped = await import_media_files(db, job.user_id, opened.media)
         await db.commit()
 
-        # FSRS seeding (§7.3) lands in M5 — new/imported cards keep NULL stability/difficulty.
+        # FSRS Tier 1 seeding (§08.3) already ran per-card inside import_cards().
         job.status = ImportStatus.DONE
         job.progress = 100
         job.stats = {

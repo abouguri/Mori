@@ -4,7 +4,7 @@ from pathlib import Path
 from httpx import AsyncClient
 
 from app.workers.import_job import run_import
-from tests.fixtures.apkg_builder import build_legacy_apkg
+from tests.fixtures.apkg_builder import build_legacy_apkg, build_modern_apkg
 
 
 async def _register(client: AsyncClient) -> None:
@@ -131,6 +131,96 @@ async def test_import_placeholder_db_yields_corrupt_error(
 
     assert result["status"] == "failed"
     assert result["error_code"] == "CORRUPT_DB"
+
+
+async def test_import_modern_deck_with_images_and_audio(
+    client: AsyncClient, tmp_path: Path
+) -> None:
+    await _register(client)
+
+    apkg_path = tmp_path / "modern-media.apkg"
+    build_modern_apkg(
+        apkg_path,
+        basic_notes=[("<img src='cat.png'>", "cat")] * 3,
+        media={
+            "cat.png": b"\x89PNG\r\n\x1a\nfake-png-bytes",
+            "clip.mp3": b"ID3fake-mp3-bytes",
+        },
+    )
+
+    result = await _upload_and_wait(client, apkg_path)
+
+    assert result["status"] == "done"
+    assert result["stats"]["notes"] == 3
+    assert result["stats"]["cards"] == 3
+    assert result["stats"]["media"] == 2
+
+    decks = (await client.get("/decks")).json()
+    names = {d["name"] for d in decks}
+    assert "Japanese" in names
+
+
+async def test_import_modern_deck_matches_legacy_card_for_card(
+    client: AsyncClient, tmp_path: Path
+) -> None:
+    """M7 acceptance: a current-Anki (v18) export imports correctly and
+    matches the legacy (v11) export of the same deck, card for card."""
+    await _register(client)
+
+    legacy_path = tmp_path / "legacy.apkg"
+    build_legacy_apkg(
+        legacy_path, basic_notes=[("front one", "back one"), ("front two", "back two")]
+    )
+    legacy_result = await _upload_and_wait(client, legacy_path)
+    assert legacy_result["status"] == "done"
+    legacy_decks = (await client.get("/decks")).json()
+
+    # Reset to a second, fresh user so the modern import isn't just an
+    # upsert of the same rows the legacy import already created.
+    await client.post("/auth/logout")
+    await client.post(
+        "/auth/register",
+        json={"email": "modern@example.com", "password": "correct horse battery"},
+    )
+
+    modern_path = tmp_path / "modern.apkg"
+    build_modern_apkg(
+        modern_path, basic_notes=[("front one", "back one"), ("front two", "back two")]
+    )
+    modern_result = await _upload_and_wait(client, modern_path)
+
+    assert modern_result["status"] == "done"
+    assert modern_result["stats"]["notes"] == legacy_result["stats"]["notes"] == 2
+    assert modern_result["stats"]["cards"] == legacy_result["stats"]["cards"] == 2
+
+    modern_decks = (await client.get("/decks")).json()
+    legacy_names = {d["name"] for d in legacy_decks}
+    modern_names = {d["name"] for d in modern_decks}
+    # Both formats also carry an unused, empty "Default" deck from the
+    # collection — matching is about the two imports agreeing, not about
+    # filtering that out.
+    assert legacy_names == modern_names == {"Default", "Japanese"}
+
+
+async def test_import_zstd_bomb_is_rejected_by_decompressed_size_not_frame_header(
+    client: AsyncClient, tmp_path: Path, monkeypatch
+) -> None:
+    """A zstd frame's declared content size is attacker-controlled — the
+    decompressor must be bounded by actually counting bytes as they stream
+    out, not by trusting that header (§05 zip-bomb defence)."""
+    import app.importer.apkg as apkg_module
+
+    monkeypatch.setattr(apkg_module, "_MAX_UNCOMPRESSED_BYTES", 100)
+
+    await _register(client)
+
+    apkg_path = tmp_path / "modern-bomb.apkg"
+    build_modern_apkg(apkg_path, basic_notes=[("front", "back")])
+
+    result = await _upload_and_wait(client, apkg_path)
+
+    assert result["status"] == "failed"
+    assert result["error_code"] == "TOO_LARGE"
 
 
 async def test_import_requires_auth(client: AsyncClient, tmp_path: Path) -> None:

@@ -21,10 +21,40 @@ Confirmed against the public schema layout (`col`, `notes`, `cards`, `revlog`,
   imports whatever rows are in `cards`. The renderer's card-generation rule
   (§09.1) only matters later, when a note is edited inside Mori itself (M3+).
 
+## Modern schema (v18) — added M7
+
+Confirmed against Anki's own `schema14_upgrade.sql`/`schema15_upgrade.sql`/
+`schema18_upgrade.sql` (`rslib/src/storage/upgrades/`) and the vendored
+`.proto` files (`services/api/app/importer/proto/anki/`, pinned to commit
+`a2ea416089d126b85bc69b20dfa8ae773900f2da`) — schemas and wire formats aren't
+copyrightable; see `NOTICE.md`.
+
+- `notes`/`cards`/`revlog` are byte-for-byte the same shape as v11 — only
+  `notetypes`/`fields`/`templates`/`decks`/`deck_config`/`config` changed,
+  from JSON blob columns on `col` to real tables with protobuf blob columns.
+  `app/importer/modern.py` parses those into the same dict shapes
+  `legacy.py` produces, so `open_modern_collection()` returns a
+  `LegacyCollection` and reuses its `notes()`/`cards()`/`revlog()` generators
+  unchanged — `normalize.py` needed zero changes for M7.
+- `collection.anki21b`'s zstd frame is decompressed with `stream_reader` and
+  a running byte count checked against the same 2 GB cap as the outer zip,
+  **not** a one-shot `.decompress(data, max_output_size=...)` call — that
+  parameter doesn't reliably bound anything once the frame declares its own
+  content size (confirmed directly: a forged frame decompressed to 10 MB
+  through a 1000-byte `max_output_size`). See the M7 correction in
+  `AGENT.html` §05.
+- The modern media map is a protobuf `MediaEntries` message, not JSON —
+  entries carry `name` and (for packages built from a legacy-style zip
+  layout) a `legacy_zip_filename` used the same way JSON's `{"0": "cat.jpg"}`
+  keys were for legacy packages.
+- `deck_config` isn't referenced by every deck — filtered decks have no
+  `Deck.Normal.config_id` (their `KindContainer` oneof is `filtered`, not
+  `normal`). `modern.py::_load_decks` imports them with a null `conf`,
+  matching how legacy already handles decks whose numeric `conf` id doesn't
+  resolve to a row.
+
 ## Deliberate limitations in the M2 importer
 
-- **Modern format (`collection.anki21b`, schema v18) is not supported yet.**
-  Detected and rejected with `UNSUPPORTED_SCHEMA` — lands in M7.
 - **Filtered decks are not specially handled.** `odue`/`odid` are ignored;
   a card pulled into a filtered deck at export time imports using its home
   deck and `due` as given. Revisit alongside M7 or the review loop (M4) if
@@ -75,7 +105,12 @@ There's no Anki install in this environment to export real fixtures from.
 recreating a public format, not derived from Anki source. Fixtures are built
 fresh at test time rather than committed as binaries, including a 10,000-note
 cloze deck for the M2 acceptance criterion ("10k-note cloze deck imports with
-correct counts").
+correct counts"). `build_modern_apkg()` (added M7) does the same for the v18
+layout — protobuf blob columns via the vendored `anki.*_pb2` bindings,
+zstd-compressed and packaged as `collection.anki21b`, used by
+`test_import_modern_deck_matches_legacy_card_for_card` to check the M7
+acceptance bar directly (same two-note deck imported both ways, same
+resulting notes/cards/deck counts).
 
 **This is a stand-in.** If real Anki-exported `.apkg` fixtures become
 available (images/audio/LaTeX/nested-deck decks, per §12), commit them to
