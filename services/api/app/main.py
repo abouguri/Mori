@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, cards, decks, health, imports
+from app.routers import auth, cards, decks, health, imports, study
 from app.services.storage import ensure_bucket
 
 
@@ -34,3 +34,4 @@ app.include_router(auth.router)
 app.include_router(decks.router)
 app.include_router(imports.router)
 app.include_router(cards.router)
+app.include_router(study.router)

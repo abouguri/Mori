@@ -46,9 +46,14 @@ export default function DeckPreviewPage() {
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
           Preview
         </h1>
-        <Link href="/decks" className="font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-chalk)]">
-          ← decks
-        </Link>
+        <div className="flex items-center gap-4 font-mono text-xs text-[var(--color-muted)]">
+          <Link href={`/study/${params.id}`} className="text-[var(--color-good)] hover:opacity-80">
+            study this deck →
+          </Link>
+          <Link href="/decks" className="hover:text-[var(--color-chalk)]">
+            ← decks
+          </Link>
+        </div>
       </div>
 
       {error && <p className="text-sm text-[var(--color-again)]">{error}</p>}

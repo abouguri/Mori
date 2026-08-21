@@ -9,10 +9,9 @@ from app.deps import get_current_user
 from app.models.card import Card
 from app.models.deck import Deck
 from app.models.media_file import MediaFile
-from app.models.note import Note
-from app.models.note_type import CardTemplate, NoteType, NoteTypeField
 from app.models.user import User
 from app.schemas.card import MediaUrl, PreviewCard
+from app.services.card_preview import build_preview_card
 from app.services.storage import signed_url
 
 router = APIRouter(tags=["cards"])
@@ -35,47 +34,8 @@ async def preview_deck_cards(
         )
     ).all()
 
-    previews: list[PreviewCard] = []
-    for card in cards:
-        note = await db.get(Note, card.note_id)
-        if note is None:
-            continue
-        note_type = await db.get(NoteType, note.note_type_id)
-        if note_type is None:
-            continue
-        template = await db.scalar(
-            select(CardTemplate).where(
-                CardTemplate.note_type_id == note_type.id, CardTemplate.ord == card.template_ord
-            )
-        )
-        if template is None:
-            continue
-        field_names = (
-            await db.scalars(
-                select(NoteTypeField.name)
-                .where(NoteTypeField.note_type_id == note_type.id)
-                .order_by(NoteTypeField.ord)
-            )
-        ).all()
-        fields = dict(zip(field_names, note.fields, strict=False))
-        is_cloze = note_type.kind == 1
-
-        previews.append(
-            PreviewCard(
-                id=card.id,
-                template_name=template.name,
-                question_format=template.question_format,
-                answer_format=template.answer_format,
-                css=note_type.css,
-                latex_pre=note_type.latex_pre,
-                latex_post=note_type.latex_post,
-                is_cloze=is_cloze,
-                cloze_number=card.template_ord + 1 if is_cloze else None,
-                fields=fields,
-                tags=note.tags,
-            )
-        )
-    return previews
+    previews = [await build_preview_card(db, card) for card in cards]
+    return [p for p in previews if p is not None]
 
 
 @router.get("/media", response_model=list[MediaUrl])

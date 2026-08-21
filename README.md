@@ -73,6 +73,14 @@ in the host page and handed in as static markup.
 </tr>
 </table>
 
+**Review**
+
+The interval ribbon — a log-scale ruler showing where each rating would
+land the card, previewed client-side and drawn fresh every reveal. FSRS
+scheduling, sibling burying, undo, and keyboard shortcuts throughout.
+
+<img src="docs/screenshots/review.png" width="70%" alt="Review screen with the interval ribbon and four rating buttons after revealing an answer">
+
 ## Status
 
 Early build. Shipped so far:
@@ -82,8 +90,8 @@ Early build. Shipped so far:
 - [x] Deck CRUD with `Parent::Child` hierarchy
 - [x] Legacy `.apkg` import — notes, cards, media, deck hierarchy, background worker with live progress
 - [x] Card renderer — templates, filters, conditionals, cloze, media rewriting, LaTeX, sandboxed no-script iframe
+- [x] Review loop — FSRS scheduling, queue builder with deck-limit inheritance, sibling burying, undo, keyboard shortcuts, interval ribbon
 - [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
-- [ ] Review loop with FSRS scheduling
 - [ ] Offline support
 
 ## Running it

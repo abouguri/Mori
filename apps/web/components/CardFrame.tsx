@@ -61,6 +61,23 @@ export function CardFrame({
         `font-src ${selfOrigin}`,
       ].join("; ");
 
+      // §10.5: on reveal, the divider draws left-to-right in 180ms and the
+      // answer fades in behind it. The iframe's srcdoc is fully rebuilt on
+      // reveal (question -> answer), so a plain load-time CSS animation on
+      // the answer's own markup gives this "for free" without host<->iframe
+      // messaging — the animation just plays once as the new document paints.
+      const revealCss =
+        side === "answer"
+          ? `
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes divider-draw { from { width: 0; } to { width: 100%; } }
+    @keyframes answer-fade { from { opacity: 0; } to { opacity: 1; } }
+    hr { border: none; border-top: 1px solid currentColor; opacity: 0.25;
+         width: 0; animation: divider-draw 180ms ease-out forwards; }
+    body { animation: answer-fade 180ms ease-out 60ms backwards; }
+  }`
+          : "";
+
       const doc = `<!DOCTYPE html>
 <html>
 <head>
@@ -73,6 +90,7 @@ export function CardFrame({
   .hint summary { cursor: pointer; color: #2fb6a8; }
   .latex-error pre { color: #e2574c; font-size: 13px; white-space: pre-wrap; }
   ${css}
+  ${revealCss}
 </style>
 </head>
 <body>${bodyHtml}</body>

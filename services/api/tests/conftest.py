@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import async_session
 from app.main import app
 from app.models import Base  # importing app.models populates Base.metadata with every table
+from app.models.user import User
 
 
 @pytest.fixture(autouse=True)
@@ -19,6 +20,15 @@ async def _clean_db() -> None:
 async def db() -> AsyncSession:
     async with async_session() as session:
         yield session
+
+
+@pytest.fixture
+async def user(db: AsyncSession) -> User:
+    u = User(email="property-test@example.com", password_hash="unused", timezone="UTC")
+    db.add(u)
+    await db.commit()
+    await db.refresh(u)
+    return u
 
 
 @pytest.fixture

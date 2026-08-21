@@ -7,6 +7,7 @@ should replace these once available; see docs/apkg-format.md.
 """
 
 import json
+import re
 import sqlite3
 import time
 import zipfile
@@ -39,6 +40,21 @@ BASIC_MODEL_ID = 1_000_001
 CLOZE_MODEL_ID = 1_000_002
 DEFAULT_DECK_ID = 1
 CUSTOM_DECK_ID = 2_000_001
+
+_CLOZE_NUMBER_RE = re.compile(r"\{\{c(\d+)::")
+
+
+def _cloze_numbers(text: str) -> list[int]:
+    """Distinct cloze numbers in a field, in first-seen order — mirrors the
+    "one card per distinct cloze number" rule (§09.1). A plain regex is fine
+    here (unlike packages/renderer/src/cloze.ts) since fixture text is never
+    adversarial."""
+    seen: list[int] = []
+    for match in _CLOZE_NUMBER_RE.finditer(text):
+        n = int(match.group(1))
+        if n not in seen:
+            seen.append(n)
+    return seen
 
 
 def _basic_model() -> dict:
@@ -138,12 +154,15 @@ def build_legacy_apkg(
             "INSERT INTO notes VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (note_id, f"guid-cloze-{i}", CLOZE_MODEL_ID, now, -1, "", flds, text, 0, 0, ""),
         )
-        conn.execute(
-            "INSERT INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            (card_id, note_id, target_deck_id, 0, now, -1, 0, 0, note_id, 0, 2500, 0, 0, 0, 0, 0, 0, ""),
-        )
+        # One card per distinct cloze number (§09.2) — card ord = cloze number - 1.
+        for cloze_number in _cloze_numbers(text) or [1]:
+            ord_ = cloze_number - 1
+            conn.execute(
+                "INSERT INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (card_id, note_id, target_deck_id, ord_, now, -1, 0, 0, note_id, 0, 2500, 0, 0, 0, 0, 0, 0, ""),
+            )
+            card_id += 1
         note_id += 1
-        card_id += 1
 
     conn.commit()
     conn.close()

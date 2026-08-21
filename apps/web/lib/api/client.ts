@@ -78,11 +78,44 @@ export interface PreviewCard {
   cloze_number: number | null;
   fields: Record<string, string>;
   tags: string[];
+  state: number;
+  stability: number | null;
+  difficulty: number | null;
+  due: string | null;
+  last_review: string | null;
 }
 
 export interface MediaUrl {
   filename: string;
   url: string;
+}
+
+export interface QueueCounts {
+  new: number;
+  learning: number;
+  due: number;
+}
+
+export interface StudySessionStart {
+  queue: QueueCounts;
+  card: PreviewCard | null;
+  next_due: string | null;
+}
+
+export interface CardState {
+  id: string;
+  state: number;
+  due: string | null;
+  stability: number | null;
+  difficulty: number | null;
+  reps: number;
+  lapses: number;
+}
+
+export interface AnswerResponse {
+  card: CardState;
+  next: PreviewCard | null;
+  queue: QueueCounts;
 }
 
 export const api = {
@@ -114,4 +147,31 @@ export const api = {
   previewDeckCards: (deckId: string) => request<PreviewCard[]>(`/decks/${deckId}/cards`),
 
   listMedia: () => request<MediaUrl[]>("/media"),
+
+  startStudySession: (deckId: string) => request<StudySessionStart>(`/decks/${deckId}/study`),
+
+  answerCard: (
+    cardId: string,
+    deckId: string,
+    rating: 1 | 2 | 3 | 4,
+    durationMs: number,
+    idempotencyKey: string,
+  ) =>
+    request<AnswerResponse>(`/cards/${cardId}/answer`, {
+      method: "POST",
+      headers: { "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify({
+        rating,
+        duration_ms: durationMs,
+        answered_at: new Date().toISOString(),
+        deck_id: deckId,
+      }),
+    }),
+
+  undoAnswer: (cardId: string, deckId: string) =>
+    request<AnswerResponse>(`/cards/${cardId}/undo?deck_id=${deckId}`, { method: "POST" }),
+
+  suspendCard: (cardId: string) => request<CardState>(`/cards/${cardId}/suspend`, { method: "POST" }),
+
+  buryCard: (cardId: string) => request<CardState>(`/cards/${cardId}/bury`, { method: "POST" }),
 };

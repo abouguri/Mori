@@ -32,3 +32,21 @@ body {
   color: var(--color-chalk);
   font-family: var(--font-ui);
 }
+
+/* §10.5 motion — card change: 140ms cross-fade + 8px rise. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes card-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-card-enter {
+    animation: card-enter 140ms ease-out;
+  }
+}
+

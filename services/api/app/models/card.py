@@ -69,3 +69,7 @@ class Card(Base):
     learning_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_review: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     anki_card_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # When this card was auto-buried as a sibling of an answered card (§07.4).
+    # Needed to know which buries are stale at the next day rollover — not in
+    # the original §06 schema, added in M4 alongside queue_builder.py.
+    buried_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
