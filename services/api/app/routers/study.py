@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +11,7 @@ from app.models.card import Card
 from app.models.deck import Deck
 from app.models.review_log import ReviewLog
 from app.models.user import User
+from app.schemas.card import PreviewCard
 from app.schemas.study import (
     AnswerRequest,
     AnswerResponse,
@@ -95,6 +96,22 @@ async def start_study_session(
     return StudySessionStart(
         queue=await _queue_counts(db, user, deck), card=preview, next_due=next_due
     )
+
+
+@router.get("/decks/{deck_id}/study/prefetch", response_model=list[PreviewCard])
+async def prefetch_study_batch(
+    deck_id: uuid.UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[PreviewCard]:
+    """M6: a static batch of upcoming cards for the offline queue — see
+    queue_builder.next_batch for how this differs from live next_card()."""
+    deck = await _get_owned_deck(db, user, deck_id)
+    cards = await queue_builder.next_batch(db, user, deck, limit)
+    await db.commit()
+    previews = [await build_preview_card(db, card) for card in cards]
+    return [p for p in previews if p is not None]
 
 
 @router.post("/cards/{card_id}/answer", response_model=AnswerResponse)

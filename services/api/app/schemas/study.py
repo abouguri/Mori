@@ -47,3 +47,4 @@ class AnswerResponse(BaseModel):
     card: CardState
     next: PreviewCard | None
     queue: QueueCounts
+

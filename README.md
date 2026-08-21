@@ -89,6 +89,16 @@ just guessed at.
 
 <img src="docs/screenshots/stats.png" width="60%" alt="Stats screen showing retention rate and two 30-day bar charts">
 
+**Offline**
+
+The next 50 cards and their media prefetch into IndexedDB at the start of
+a session. Lose the connection mid-review and answers keep landing — each
+one buffered locally and replayed the moment you're back, with the same
+idempotency key it would have used online, so nothing double-scores and
+nothing gets lost.
+
+<img src="docs/screenshots/offline.png" width="70%" alt="Study screen showing an OFFLINE badge after the connection drops mid-session">
+
 ## Status
 
 Early build. Shipped so far:
@@ -100,8 +110,8 @@ Early build. Shipped so far:
 - [x] Card renderer — templates, filters, conditionals, cloze, media rewriting, LaTeX, sandboxed no-script iframe
 - [x] Review loop — FSRS scheduling, queue builder with deck-limit inheritance, sibling burying, undo, keyboard shortcuts, interval ribbon
 - [x] FSRS seeding for imported decks + per-deck stats (retention, review history, due forecast)
+- [x] Offline support — Dexie prefetch, buffered answers, replay on reconnect
 - [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
-- [ ] Offline support
 
 ## Running it
 

@@ -4,7 +4,19 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CardFrame } from "@/components/CardFrame";
 import { IntervalRibbon } from "@/components/IntervalRibbon";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { api, ApiError, type MediaUrl, type PreviewCard, type QueueCounts } from "@/lib/api/client";
+import {
+  getCachedQueue,
+  loadOfflineMediaUrls,
+  pendingAnswerCount,
+  prefetchSession,
+  queueAnswer,
+  removeCachedCard,
+  replayBufferedAnswers,
+  revokeOfflineMediaUrls,
+} from "@/lib/db/offline";
+import type { CachedCard } from "@/lib/db/schema";
 
 type Side = "question" | "answer";
 
@@ -41,28 +53,97 @@ export default function StudyPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [lastAnswered, setLastAnswered] = useState<PreviewCard | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [outOfCachedCards, setOutOfCachedCards] = useState(false);
 
   const shownAtRef = useRef<number>(Date.now());
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const offlineQueueRef = useRef<CachedCard[]>([]);
+  const offlineMediaRef = useRef<Map<string, string>>(new Map());
+
+  const refreshPendingCount = useCallback(() => {
+    void pendingAnswerCount().then(setPendingCount);
+  }, []);
+
+  const sync = useCallback(async () => {
+    const { remaining } = await replayBufferedAnswers();
+    setPendingCount(remaining);
+    if (remaining === 0) {
+      // Fully caught up — resync with the live session and a fresh
+      // prefetch (offline-answered cards are now server-confirmed).
+      try {
+        const session = await api.startStudySession(deckId);
+        setCard(session.card);
+        setQueue(session.queue);
+        setNextDue(session.next_due);
+        setOutOfCachedCards(false);
+        await prefetchSession(deckId);
+        offlineQueueRef.current = await getCachedQueue(deckId);
+      } catch {
+        // Reconnected just long enough to replay, then dropped again — fine,
+        // we'll try a full resync next time 'online' fires.
+      }
+    }
+  }, [deckId]);
 
   useEffect(() => {
-    Promise.all([api.listMedia(), api.startStudySession(deckId)])
-      .then(([mediaList, session]) => {
-        setMedia(mediaList);
+    setIsOnline(navigator.onLine);
+    function onOnline() {
+      setIsOnline(true);
+      void sync();
+    }
+    function onOffline() {
+      setIsOnline(false);
+    }
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, [sync]);
+
+  useEffect(() => {
+    api
+      .startStudySession(deckId)
+      .then(async (session) => {
         setCard(session.card);
         setQueue(session.queue);
         setNextDue(session.next_due);
         shownAtRef.current = Date.now();
       })
       .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) router.push("/login");
-        else setError("Couldn't load this study session.");
+        if (err instanceof ApiError && err.status === 401) {
+          router.push("/login");
+          return;
+        }
+        // Opened this page while already offline — fall back to whatever's
+        // cached from a previous session's prefetch.
+        setIsOnline(false);
       });
+
+    api.listMedia().then(setMedia).catch(() => {});
+
+    void prefetchSession(deckId)
+      .then(() => getCachedQueue(deckId))
+      .then((cached) => {
+        offlineQueueRef.current = cached;
+      })
+      .catch(() => {});
+    void loadOfflineMediaUrls().then((urls) => {
+      offlineMediaRef.current = urls;
+    });
+    refreshPendingCount();
+
+    return () => revokeOfflineMediaUrls(offlineMediaRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId, router]);
 
   const mediaByFilename = useMemo(() => new Map(media.map((m) => [m.filename, m.url])), [media]);
   const resolveMedia = useCallback(
-    (filename: string) => mediaByFilename.get(filename) ?? filename,
+    (filename: string) =>
+      mediaByFilename.get(filename) ?? offlineMediaRef.current.get(filename) ?? filename,
     [mediaByFilename],
   );
   const [mediaOrigin, setMediaOrigin] = useState("");
@@ -74,47 +155,85 @@ export default function StudyPage() {
     if (side === "question" && card) setSide("answer");
   }, [side, card]);
 
+  const advanceFromOfflineQueue = useCallback((answeredCardId: string) => {
+    offlineQueueRef.current = offlineQueueRef.current.filter((c) => c.id !== answeredCardId);
+    const next = offlineQueueRef.current[0];
+    setOutOfCachedCards(next === undefined);
+    return next?.data ?? null;
+  }, []);
+
   const rate = useCallback(
     async (rating: 1 | 2 | 3 | 4) => {
       if (side !== "answer" || !card || busy) return;
       setBusy(true);
       const durationMs = Date.now() - shownAtRef.current;
       const answeredCard = card;
-      try {
-        const response = await api.answerCard(
-          answeredCard.id,
-          deckId,
-          rating,
-          durationMs,
-          idempotencyKeyRef.current,
-        );
-        idempotencyKeyRef.current = crypto.randomUUID();
-        setLastAnswered(answeredCard);
-        setSide("question");
-        shownAtRef.current = Date.now();
+      const idempotencyKey = idempotencyKeyRef.current;
 
-        if (response.next === null) {
-          // AnswerResponse has no next_due — re-fetch so the empty state
-          // can say "Next card in 3 hours" instead of a bare "nothing due".
-          const session = await api.startStudySession(deckId);
-          setCard(session.card);
-          setQueue(session.queue);
-          setNextDue(session.next_due);
-        } else {
-          setCard(response.next);
-          setQueue(response.queue);
+      if (navigator.onLine) {
+        try {
+          const response = await api.answerCard(
+            answeredCard.id,
+            deckId,
+            rating,
+            durationMs,
+            idempotencyKey,
+          );
+          idempotencyKeyRef.current = crypto.randomUUID();
+          setLastAnswered(answeredCard);
+          setSide("question");
+          shownAtRef.current = Date.now();
+          void removeCachedCard(answeredCard.id);
+          offlineQueueRef.current = offlineQueueRef.current.filter((c) => c.id !== answeredCard.id);
+
+          if (response.next === null) {
+            const session = await api.startStudySession(deckId);
+            setCard(session.card);
+            setQueue(session.queue);
+            setNextDue(session.next_due);
+          } else {
+            setCard(response.next);
+            setQueue(response.queue);
+          }
+          setBusy(false);
+          return;
+        } catch {
+          // Network call genuinely failed — fall through to the offline path.
         }
-      } catch {
-        setError("Couldn't save that answer. Try again.");
-      } finally {
-        setBusy(false);
       }
+
+      // Offline (or the live call just failed): buffer the answer and
+      // advance using the locally prefetched queue instead of the server's.
+      await queueAnswer({
+        idempotencyKey,
+        cardId: answeredCard.id,
+        deckId,
+        rating,
+        durationMs,
+        answeredAt: new Date().toISOString(),
+      });
+      idempotencyKeyRef.current = crypto.randomUUID();
+      void removeCachedCard(answeredCard.id);
+      setIsOnline(false);
+      refreshPendingCount();
+
+      setQueue((q) => {
+        if (answeredCard.state === 0) return { ...q, new: Math.max(0, q.new - 1) };
+        if (answeredCard.state === 1 || answeredCard.state === 3) {
+          return { ...q, learning: Math.max(0, q.learning - 1) };
+        }
+        return { ...q, due: Math.max(0, q.due - 1) };
+      });
+      setCard(advanceFromOfflineQueue(answeredCard.id));
+      setSide("question");
+      shownAtRef.current = Date.now();
+      setBusy(false);
     },
-    [side, card, busy, deckId],
+    [side, card, busy, deckId, advanceFromOfflineQueue, refreshPendingCount],
   );
 
   const undo = useCallback(async () => {
-    if (!lastAnswered || busy) return;
+    if (!lastAnswered || busy || !isOnline) return;
     setBusy(true);
     try {
       const response = await api.undoAnswer(lastAnswered.id, deckId);
@@ -128,10 +247,10 @@ export default function StudyPage() {
     } finally {
       setBusy(false);
     }
-  }, [lastAnswered, busy, deckId]);
+  }, [lastAnswered, busy, deckId, isOnline]);
 
   const suspend = useCallback(async () => {
-    if (!card || busy) return;
+    if (!card || busy || !isOnline) return;
     setBusy(true);
     try {
       await api.suspendCard(card.id);
@@ -144,10 +263,10 @@ export default function StudyPage() {
     } finally {
       setBusy(false);
     }
-  }, [card, busy, deckId]);
+  }, [card, busy, deckId, isOnline]);
 
   const bury = useCallback(async () => {
-    if (!card || busy) return;
+    if (!card || busy || !isOnline) return;
     setBusy(true);
     try {
       await api.buryCard(card.id);
@@ -160,7 +279,7 @@ export default function StudyPage() {
     } finally {
       setBusy(false);
     }
-  }, [card, busy, deckId]);
+  }, [card, busy, deckId, isOnline]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -209,9 +328,12 @@ export default function StudyPage() {
         <button type="button" onClick={() => router.push("/decks")} className="hover:text-[var(--color-chalk)]">
           ← Esc
         </button>
-        <span>
-          {queue.new} new · {queue.learning} learning · {queue.due} due
-        </span>
+        <div className="flex items-center gap-3">
+          <OfflineIndicator isOnline={isOnline} pendingCount={pendingCount} />
+          <span>
+            {queue.new} new · {queue.learning} learning · {queue.due} due
+          </span>
+        </div>
       </div>
 
       {error && <p className="mb-4 text-sm text-[var(--color-again)]">{error}</p>}
@@ -219,8 +341,10 @@ export default function StudyPage() {
       {card === null ? (
         <div className="flex flex-1 items-center justify-center">
           <p className="text-center text-[var(--color-muted)]">
-            Nothing due.
-            {nextDue && <> Next card in {timeUntil(nextDue)}.</>}
+            {!isOnline && outOfCachedCards
+              ? "Nothing left cached for offline study."
+              : "Nothing due."}
+            {isOnline && nextDue && <> Next card in {timeUntil(nextDue)}.</>}
           </p>
         </div>
       ) : (

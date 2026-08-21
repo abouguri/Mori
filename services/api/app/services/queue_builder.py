@@ -157,6 +157,93 @@ async def next_card(db: AsyncSession, user: User, deck: Deck) -> Card | None:
     return review or new
 
 
+async def next_batch(db: AsyncSession, user: User, deck: Deck, limit: int = 50) -> list[Card]:
+    """A static snapshot of up to `limit` upcoming cards, for M6's offline
+    prefetch — same learning-first + alternating review/new ordering as
+    next_card(), simulated forward as if each card were answered in turn.
+
+    Unlike next_card(), this doesn't reflect sibling burying that would
+    happen from live answers, since those only take effect once a card is
+    actually answered — a session built entirely from offline answers can
+    include a sibling pair that a live session would have buried apart.
+    Documented in docs/offline.md.
+    """
+    deck_ids = await subtree_deck_ids(db, deck.id)
+    now = datetime.now(UTC)
+    day_start, day_end = day_bounds(user, now)
+    await clear_stale_buries(db, user, deck_ids, day_start)
+
+    learning = list(
+        (
+            await db.scalars(
+                select(Card)
+                .where(
+                    Card.deck_id.in_(deck_ids),
+                    Card.queue == 0,
+                    Card.state.in_((1, 3)),
+                    Card.due <= now,
+                )
+                .order_by(Card.due)
+                .limit(limit)
+            )
+        ).all()
+    )
+
+    new_done, review_done = await _counts_done_today(db, deck_ids, day_start)
+    review_cap = max(0, deck.reviews_per_day - review_done)
+    new_cap = max(0, deck.new_per_day - new_done)
+
+    review = (
+        list(
+            (
+                await db.scalars(
+                    select(Card)
+                    .where(
+                        Card.deck_id.in_(deck_ids),
+                        Card.queue == 0,
+                        Card.state == 2,
+                        Card.due <= day_end,
+                    )
+                    .order_by(Card.due)
+                    .limit(review_cap)
+                )
+            ).all()
+        )
+        if review_cap > 0
+        else []
+    )
+    new = (
+        list(
+            (
+                await db.scalars(
+                    select(Card)
+                    .where(Card.deck_id.in_(deck_ids), Card.queue == 0, Card.state == 0)
+                    .order_by(Card.new_position)
+                    .limit(new_cap)
+                )
+            ).all()
+        )
+        if new_cap > 0
+        else []
+    )
+
+    merged: list[Card] = list(learning)
+    done = new_done + review_done
+    ri, ni = 0, 0
+    while (ri < len(review) or ni < len(new)) and len(merged) < limit:
+        if ni < len(new) and (ri >= len(review) or done % 3 == 0):
+            merged.append(new[ni])
+            ni += 1
+        elif ri < len(review):
+            merged.append(review[ri])
+            ri += 1
+        else:
+            break
+        done += 1
+
+    return merged[:limit]
+
+
 async def next_due_time(db: AsyncSession, deck_ids: list[uuid.UUID]) -> datetime | None:
     """Soonest a queue=0 card in this subtree becomes due — for the empty
     state's "Next card in 3 hours" (§10.6). Only meaningful once the queue is

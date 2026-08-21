@@ -161,6 +161,9 @@ export const api = {
 
   startStudySession: (deckId: string) => request<StudySessionStart>(`/decks/${deckId}/study`),
 
+  previewStudyBatch: (deckId: string, limit: number) =>
+    request<PreviewCard[]>(`/decks/${deckId}/study/prefetch?limit=${limit}`),
+
   answerCard: (
     cardId: string,
     deckId: string,

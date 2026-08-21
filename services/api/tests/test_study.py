@@ -34,6 +34,34 @@ async def test_study_session_serves_new_cards_by_position(client: AsyncClient, t
     assert start["card"] is not None
 
 
+async def test_prefetch_batch_returns_all_available_cards_up_to_limit(
+    client: AsyncClient, tmp_path: Path
+) -> None:
+    deck_id = await _register_and_import(client, tmp_path, note_count=15)
+
+    batch = (await client.get(f"/decks/{deck_id}/study/prefetch")).json()
+    # 15 new cards, well under both the default new_per_day cap (20) and the
+    # request's default limit (50), so nothing gets truncated.
+    assert len(batch) == 15
+
+    limited = (await client.get(f"/decks/{deck_id}/study/prefetch", params={"limit": 10})).json()
+    assert len(limited) == 10
+
+
+async def test_prefetch_batch_respects_new_per_day_cap(client: AsyncClient, tmp_path: Path) -> None:
+    deck_id = await _register_and_import(client, tmp_path, note_count=10)
+    # Lower the cap directly via the deck settings endpoint.
+    await client.patch(f"/decks/{deck_id}", json={"new_per_day": 3})
+
+    batch = (await client.get(f"/decks/{deck_id}/study/prefetch")).json()
+    assert len(batch) == 3
+
+
+async def test_prefetch_requires_auth(client: AsyncClient) -> None:
+    response = await client.get("/decks/00000000-0000-0000-0000-000000000000/study/prefetch")
+    assert response.status_code == 401
+
+
 async def test_answering_a_card_decrements_new_count_and_advances_queue(
     client: AsyncClient, tmp_path: Path
 ) -> None:
