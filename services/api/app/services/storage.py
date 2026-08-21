@@ -3,11 +3,20 @@ from pathlib import Path
 from typing import Any
 
 import aioboto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from app.config import settings
 
 _session = aioboto3.Session()
+
+# Recent botocore versions default to sending/validating a CRC32 checksum on
+# every S3 request. Cloudflare R2's S3-compatible API doesn't implement that
+# checksum extension, so with the default config every upload against R2
+# fails — this is Cloudflare's own documented workaround, not a guess.
+_R2_COMPAT_CONFIG = Config(
+    request_checksum_calculation="when_required", response_checksum_validation="when_required"
+)
 
 
 @asynccontextmanager
@@ -17,6 +26,7 @@ async def s3_client() -> Any:
         endpoint_url=settings.s3_endpoint_url,
         aws_access_key_id=settings.s3_access_key,
         aws_secret_access_key=settings.s3_secret_key,
+        config=_R2_COMPAT_CONFIG,
     ) as client:
         yield client
 
@@ -28,6 +38,7 @@ async def s3_public_client() -> Any:
         endpoint_url=settings.s3_public_url,
         aws_access_key_id=settings.s3_access_key,
         aws_secret_access_key=settings.s3_secret_key,
+        config=_R2_COMPAT_CONFIG,
     ) as client:
         yield client
 

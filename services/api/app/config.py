@@ -22,6 +22,13 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:3010"]
     cookie_secure: bool = False
+    # "lax" works for local dev (frontend and API share a domain via the
+    # docker-compose ports). A split deploy (e.g. Vercel frontend + a
+    # separately-hosted API) puts them on different origins, and browsers
+    # don't send Lax cookies on cross-site fetch/XHR at all — only "none"
+    # does, which browsers additionally require Secure to be set alongside
+    # (enforced below, not left to config to get wrong).
+    cookie_samesite: str = "lax"
 
 
 settings = Settings()

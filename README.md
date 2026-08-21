@@ -131,6 +131,12 @@ Ports are non-default (3010/8010 instead of 3000/8000) to avoid clashing
 with other local services; adjust in `docker-compose.yml` if you'd rather
 free up the standard ports.
 
+### Deploying
+
+[docs/deploy.md](docs/deploy.md) walks through a $0/month split deploy —
+Vercel for the frontend, a free-tier Oracle Cloud VM for the API and
+worker, Neon for Postgres, Upstash for Redis, Cloudflare R2 for media.
+
 ## Development
 
 Frontend (`apps/web`) is Next.js 15 + TypeScript + Tailwind CSS v4, plus a

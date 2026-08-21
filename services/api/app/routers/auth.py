@@ -15,6 +15,13 @@ from app.services.security import TokenType, create_token, hash_password, verify
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# Browsers silently drop `SameSite=None` cookies lacking `Secure` — deriving
+# it here means a config that sets samesite="none" but forgets cookie_secure
+# fails loudly (login just won't stick) rather than working locally and
+# breaking only once deployed cross-site.
+_COOKIE_SECURE = settings.cookie_secure or settings.cookie_samesite == "none"
+
+
 def _set_session_cookies(response: Response, user_id: uuid.UUID) -> None:
     access_token = create_token(user_id, TokenType.ACCESS)
     refresh_token = create_token(user_id, TokenType.REFRESH)
@@ -23,16 +30,16 @@ def _set_session_cookies(response: Response, user_id: uuid.UUID) -> None:
         access_token,
         max_age=settings.access_token_ttl_minutes * 60,
         httponly=True,
-        secure=settings.cookie_secure,
-        samesite="lax",
+        secure=_COOKIE_SECURE,
+        samesite=settings.cookie_samesite,
     )
     response.set_cookie(
         "refresh_token",
         refresh_token,
         max_age=settings.refresh_token_ttl_days * 24 * 60 * 60,
         httponly=True,
-        secure=settings.cookie_secure,
-        samesite="lax",
+        secure=_COOKIE_SECURE,
+        samesite=settings.cookie_samesite,
     )
 
 
@@ -67,8 +74,14 @@ async def login(body: LoginRequest, response: Response, db: AsyncSession = Depen
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(response: Response) -> None:
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    # Must match the attributes the cookie was set with, or some browsers
+    # (notably Safari) treat this as a different cookie and don't clear it.
+    response.delete_cookie(
+        "access_token", secure=_COOKIE_SECURE, samesite=settings.cookie_samesite
+    )
+    response.delete_cookie(
+        "refresh_token", secure=_COOKIE_SECURE, samesite=settings.cookie_samesite
+    )
 
 
 @router.get("/me", response_model=UserRead)

@@ -1,0 +1,45 @@
+# Production compose for the backend half of the split deploy (see
+# docs/deploy.md). Runs only `api`, `worker`, and a Caddy reverse proxy for
+# automatic HTTPS — Postgres and Redis are external managed services (Neon,
+# Upstash), media goes to Cloudflare R2, and the frontend deploys to Vercel
+# separately. Real secrets come from a `.env` file on the host (never
+# committed — see .env.prod.example).
+#
+# Usage on the host:
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  api:
+    build: ./services/api
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file: .env
+    expose:
+      - "8000"
+
+  worker:
+    build:
+      context: ./services/api
+      args:
+        WITH_OPTIMIZER: "true"
+    restart: unless-stopped
+    command: ["arq", "app.workers.tasks.WorkerSettings"]
+    env_file: .env
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file: .env  # reads API_DOMAIN for the Caddyfile's auto-HTTPS host
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:

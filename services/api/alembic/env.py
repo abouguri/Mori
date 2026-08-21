@@ -6,13 +6,20 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from app.config import settings
+from app.db import translate_database_url
 from app.models import Base
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+_url, _connect_args = translate_database_url(settings.database_url)
+# str(URL) redacts the password (it's meant for safe logging) — this needs
+# the real credential to actually connect with, confirmed the hard way:
+# str() here connects fine with the literal string "***" as the password
+# against a server that doesn't have a user named that, so it fails with
+# InvalidPasswordError instead of a more obvious "bad url" error.
+config.set_main_option("sqlalchemy.url", _url.render_as_string(hide_password=False))
 
 target_metadata = Base.metadata
 
@@ -40,6 +47,7 @@ async def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=_connect_args,
     )
 
     async with connectable.connect() as connection:
