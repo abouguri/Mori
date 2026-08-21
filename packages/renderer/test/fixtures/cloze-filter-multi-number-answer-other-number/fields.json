@@ -1,0 +1,7 @@
+{
+  "fields": {
+    "Text": "{{c1::A}} and {{c2::B}}"
+  },
+  "clozeNumber": 2,
+  "side": "answer"
+}

@@ -5,34 +5,22 @@ on:
   pull_request:
 
 jobs:
-  web:
+  # apps/web depends on packages/renderer via npm workspaces, so both are
+  # installed and checked together from the repo root — an isolated install
+  # scoped to apps/web alone can't resolve the workspace-linked package.
+  node:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run build
-
-  renderer:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/renderer
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm install
-      - run: npm run typecheck
-      - run: npm test
+      - run: npm run typecheck --workspace=packages/renderer
+      - run: npm test --workspace=packages/renderer
+      - run: npm run lint --workspace=apps/web
+      - run: npm run typecheck --workspace=apps/web
+      - run: npm run build --workspace=apps/web
 
   api:
     runs-on: ubuntu-latest

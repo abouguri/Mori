@@ -4,6 +4,7 @@ AGENT.md
 
 # node
 node_modules/
+apps/web/public/katex/
 .next/
 out/
 dist/

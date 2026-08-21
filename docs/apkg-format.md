@@ -48,9 +48,24 @@ Confirmed against the public schema layout (`col`, `notes`, `cards`, `revlog`,
 - **SVG media is stored as-is at import time**, not sanitized. The spec's
   defense-in-depth for SVG (§07.4) is sanitize-at-import *and*
   `Content-Security-Policy: sandbox` at render time. Only the CSP half
-  exists so far, because sanitization is easiest to land alongside the
-  sandboxed render path in M3. Don't serve imported SVGs outside that
-  sandbox until the import-time sanitizer is added.
+  exists so far — SVG content sanitization is still open; don't serve
+  imported SVGs outside the sandboxed iframe until it's added.
+
+## Template sanitization (retrofitted from M2 into M3)
+
+§07.4 says card templates must be sanitized at import ("Card templates may
+contain `<script>`. Strip at import"). This was missed in the original M2
+pass and got caught while building the M3 renderer's sandboxing story —
+added now via `services/api/app/importer/sanitize.py` (`nh3`, a Rust/Ammonia
+allow-list sanitizer), applied to `qfmt`/`afmt` in
+`normalize.py::import_note_types`. `{{Field}}`-style tags are plain text to
+an HTML parser and pass through untouched; only real markup is filtered.
+
+External media/tracking pixels in templates (`<img src="https://evil/…">`)
+are intentionally *not* blocked at the sanitizer layer — that's the render-time
+iframe CSP's job (`img-src`/`media-src` restricted to the media origin),
+which a browser enforces regardless of what the HTML string contains, unlike
+string-level filtering which is easier to bypass.
 
 ## Test fixtures
 

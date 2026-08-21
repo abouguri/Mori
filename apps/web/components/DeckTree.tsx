@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { DeckNode } from "@/lib/api/client";
 
 export function DeckTree({
@@ -21,9 +22,12 @@ export function DeckTree({
             className="group flex items-center justify-between gap-3 rounded-[var(--radius-control)] px-3 py-2 hover:bg-[var(--color-slate)]"
             style={{ paddingLeft: `${depth * 20 + 12}px` }}
           >
-            <span className="font-[family-name:var(--font-ui)] text-[var(--color-chalk)]">
+            <Link
+              href={`/decks/${deck.id}`}
+              className="font-[family-name:var(--font-ui)] text-[var(--color-chalk)] hover:text-[var(--color-good)]"
+            >
               {deck.name}
-            </span>
+            </Link>
             <button
               type="button"
               onClick={() => onDelete(deck.id)}

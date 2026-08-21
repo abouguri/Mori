@@ -21,6 +21,17 @@ async def s3_client() -> Any:
         yield client
 
 
+@asynccontextmanager
+async def s3_public_client() -> Any:
+    async with _session.client(
+        "s3",
+        endpoint_url=settings.s3_public_url,
+        aws_access_key_id=settings.s3_access_key,
+        aws_secret_access_key=settings.s3_secret_key,
+    ) as client:
+        yield client
+
+
 async def ensure_bucket() -> None:
     async with s3_client() as client:
         try:
@@ -52,7 +63,7 @@ async def upload_bytes(data: bytes, storage_key: str, content_type: str) -> None
 
 
 async def signed_url(storage_key: str, expires_in: int = 600) -> str:
-    async with s3_client() as client:
+    async with s3_public_client() as client:
         return await client.generate_presigned_url(
             "get_object",
             Params={"Bucket": settings.s3_bucket, "Key": storage_key},

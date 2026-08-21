@@ -1,0 +1,102 @@
+"use client";
+
+import { renderAnswer, renderCardCss, renderQuestion } from "@mori/renderer";
+import { useEffect, useState } from "react";
+import type { PreviewCard } from "@/lib/api/client";
+import { hydrateLatex } from "@/lib/render/hydrateLatex";
+
+let katexCssCache: string | null = null;
+
+async function loadKatexCss(selfOrigin: string): Promise<string> {
+  if (katexCssCache) return katexCssCache;
+  const response = await fetch("/katex/katex.min.css");
+  const raw = await response.text();
+  katexCssCache = raw.replace(/url\(fonts\//g, `url(${selfOrigin}/katex/fonts/`);
+  return katexCssCache;
+}
+
+export function CardFrame({
+  card,
+  side,
+  resolveMedia,
+  mediaOrigin,
+}: {
+  card: PreviewCard;
+  side: "question" | "answer";
+  resolveMedia: (filename: string) => string;
+  mediaOrigin: string;
+}) {
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function build() {
+      const selfOrigin = window.location.origin;
+      const katexCss = await loadKatexCss(selfOrigin);
+
+      const ctx = {
+        fields: card.fields,
+        tags: card.tags,
+        latexPre: card.latex_pre,
+        latexPost: card.latex_post,
+        clozeNumber: card.cloze_number ?? undefined,
+        resolveMedia,
+      };
+
+      const questionHtml = renderQuestion(card.question_format, ctx);
+      const bodyHtmlRaw =
+        side === "question" ? questionHtml : renderAnswer(card.answer_format, ctx, questionHtml);
+      const bodyHtml = hydrateLatex(bodyHtmlRaw);
+      const css = renderCardCss(card.css, resolveMedia);
+
+      // §09.4's directive plus font-src widened to our own origin: KaTeX's
+      // fonts are served from apps/web/public, not the media domain, and the
+      // spec's original directive predates that detail.
+      const csp = [
+        "default-src 'none'",
+        `img-src ${mediaOrigin}`,
+        `media-src ${mediaOrigin}`,
+        "style-src 'unsafe-inline'",
+        `font-src ${selfOrigin}`,
+      ].join("; ");
+
+      const doc = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${csp}">
+<style>${katexCss}</style>
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; font-size: 20px; text-align: center; padding: 1.5rem; box-sizing: border-box; }
+  .cloze { color: #7c8cf8; font-weight: 600; }
+  .hint summary { cursor: pointer; color: #2fb6a8; }
+  .latex-error pre { color: #e2574c; font-size: 13px; white-space: pre-wrap; }
+  ${css}
+</style>
+</head>
+<body>${bodyHtml}</body>
+</html>`;
+
+      if (!cancelled) setSrcDoc(doc);
+    }
+
+    void build();
+    return () => {
+      cancelled = true;
+    };
+  }, [card, side, resolveMedia, mediaOrigin]);
+
+  if (srcDoc === null) {
+    return <div className="h-48 w-full animate-pulse rounded-[var(--radius-card)] bg-[var(--color-slate)]" />;
+  }
+
+  return (
+    <iframe
+      title={card.template_name}
+      sandbox=""
+      srcDoc={srcDoc}
+      className="h-48 w-full overflow-auto rounded-[var(--radius-card)] border-0 bg-[var(--color-card)]"
+    />
+  );
+}

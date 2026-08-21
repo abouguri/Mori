@@ -27,6 +27,7 @@ dependencies = [
   "uuid-utils>=0.9",
   "aioboto3>=13.2",
   "python-multipart>=0.0.19",
+  "nh3>=0.2",
 ]
 
 [project.optional-dependencies]

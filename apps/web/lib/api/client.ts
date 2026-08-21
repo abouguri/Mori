@@ -66,6 +66,25 @@ export interface ImportJob {
   error_detail: string | null;
 }
 
+export interface PreviewCard {
+  id: string;
+  template_name: string;
+  question_format: string;
+  answer_format: string;
+  css: string;
+  latex_pre: string;
+  latex_post: string;
+  is_cloze: boolean;
+  cloze_number: number | null;
+  fields: Record<string, string>;
+  tags: string[];
+}
+
+export interface MediaUrl {
+  filename: string;
+  url: string;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -91,4 +110,8 @@ export const api = {
   },
 
   getImport: (id: string) => request<ImportJob>(`/imports/${id}`),
+
+  previewDeckCards: (deckId: string) => request<PreviewCard[]>(`/decks/${deckId}/cards`),
+
+  listMedia: () => request<MediaUrl[]>("/media"),
 };

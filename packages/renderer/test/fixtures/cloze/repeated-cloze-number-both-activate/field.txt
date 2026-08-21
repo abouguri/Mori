@@ -1,0 +1,1 @@
+{{c1::Paris}} is in France, and {{c1::Paris}} is its capital.

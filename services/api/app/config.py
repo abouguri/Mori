@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
 
     s3_endpoint_url: str = "http://minio:9000"
+    # Presigned URLs are signed against a Host header, so they must use the
+    # origin the *browser* will actually request — not the docker-internal
+    # hostname the API/worker use to reach MinIO server-to-server.
+    s3_public_url: str = "http://localhost:9000"
     s3_access_key: str = "mori"
     s3_secret_key: str = "mori-dev-secret"
     s3_bucket: str = "mori-media"

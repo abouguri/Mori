@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.importer.anki_enums import AnkiCardQueue, AnkiCardType
 from app.importer.legacy import LegacyCard, LegacyNote, LegacyRevlogEntry
+from app.importer.sanitize import sanitize_template
 from app.models.card import Card
 from app.models.note import Note
 from app.models.note_type import CardTemplate, NoteType, NoteTypeField
@@ -77,8 +78,8 @@ async def import_note_types(
                     note_type_id=note_type.id,
                     ord=tmpl["ord"],
                     name=tmpl.get("name", f"Card {tmpl['ord'] + 1}"),
-                    question_format=tmpl.get("qfmt", ""),
-                    answer_format=tmpl.get("afmt", ""),
+                    question_format=sanitize_template(tmpl.get("qfmt", "")),
+                    answer_format=sanitize_template(tmpl.get("afmt", "")),
                 )
             )
     await db.commit()

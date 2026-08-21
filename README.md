@@ -60,6 +60,19 @@ progress and a final count.
 
 <img src="docs/screenshots/import.png" width="70%" alt="Import screen showing a completed import with note, card, and media counts">
 
+**Rendering**
+
+Anki's template grammar, cloze deletions, and LaTeX — rendered inside a
+sandboxed iframe with no script execution allowed, math typeset by KaTeX
+in the host page and handed in as static markup.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/latex.png" alt="A card rendering LaTeX math via KaTeX"></td>
+<td width="50%"><img src="docs/screenshots/cloze.png" alt="A cloze deletion card with a hint revealed"></td>
+</tr>
+</table>
+
 ## Status
 
 Early build. Shipped so far:
@@ -68,8 +81,8 @@ Early build. Shipped so far:
 - [x] Auth — register, login, httpOnly cookie sessions
 - [x] Deck CRUD with `Parent::Child` hierarchy
 - [x] Legacy `.apkg` import — notes, cards, media, deck hierarchy, background worker with live progress
+- [x] Card renderer — templates, filters, conditionals, cloze, media rewriting, LaTeX, sandboxed no-script iframe
 - [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
-- [ ] Card renderer (templates, cloze, LaTeX, media)
 - [ ] Review loop with FSRS scheduling
 - [ ] Offline support
 
@@ -93,12 +106,14 @@ free up the standard ports.
 
 ## Development
 
-Frontend (`apps/web`) is Next.js 15 + TypeScript + Tailwind CSS v4.
-Backend (`services/api`) is FastAPI + SQLAlchemy (async) + Alembic on
-PostgreSQL, with ARQ/Redis for background jobs.
+Frontend (`apps/web`) is Next.js 15 + TypeScript + Tailwind CSS v4, plus a
+dependency-free template renderer (`packages/renderer`) shared via npm
+workspaces. Backend (`services/api`) is FastAPI + SQLAlchemy (async) +
+Alembic on PostgreSQL, with ARQ/Redis for background jobs.
 
 ```sh
-cd apps/web && npm install && npm run dev
+npm install                      # installs apps/web + packages/renderer together
+npm run dev --workspace=apps/web
 cd services/api && pip install -e ".[dev]" && uvicorn app.main:app --reload
 ```
 

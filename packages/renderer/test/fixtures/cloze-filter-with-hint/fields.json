@@ -1,0 +1,7 @@
+{
+  "fields": {
+    "Text": "The capital is {{c1::Paris::city}}."
+  },
+  "clozeNumber": 1,
+  "side": "question"
+}
