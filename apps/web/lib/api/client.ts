@@ -10,11 +10,12 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const isFormData = init?.body instanceof FormData;
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...init?.headers,
     },
   });
@@ -48,6 +49,23 @@ export interface DeckNode {
   children: DeckNode[];
 }
 
+export interface ImportStats {
+  notes: number;
+  cards: number;
+  media: number;
+  skipped: number;
+}
+
+export interface ImportJob {
+  id: string;
+  filename: string;
+  status: "queued" | "parsing" | "importing" | "done" | "failed";
+  progress: number;
+  stats: ImportStats | null;
+  error_code: string | null;
+  error_detail: string | null;
+}
+
 export const api = {
   register: (email: string, password: string) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
@@ -65,4 +83,12 @@ export const api = {
     request<DeckNode>("/decks", { method: "POST", body: JSON.stringify({ name }) }),
 
   deleteDeck: (id: string) => request<void>(`/decks/${id}`, { method: "DELETE" }),
+
+  createImport: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request<ImportJob>("/imports", { method: "POST", body });
+  },
+
+  getImport: (id: string) => request<ImportJob>(`/imports/${id}`),
 };

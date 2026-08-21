@@ -31,11 +31,16 @@ async def _unique_slug(db: AsyncSession, user_id: uuid.UUID, parent_id: uuid.UUI
         suffix += 1
 
 
-async def create_deck_path(db: AsyncSession, user_id: uuid.UUID, full_name: str) -> Deck:
-    """Create (or reuse) every deck along a `Parent::Child::Grandchild` path, returning the leaf."""
+async def create_deck_path(
+    db: AsyncSession, user_id: uuid.UUID, full_name: str, sep: str = "::"
+) -> Deck:
+    """Create (or reuse) every deck along a `Parent::Child::Grandchild` path, returning the leaf.
+
+    `sep` is "::" for manually-typed paths and "\\x1f" for Anki's on-disk deck names (§07.4).
+    """
     parent_id: uuid.UUID | None = None
     leaf: Deck | None = None
-    for level_name in (part.strip() for part in full_name.split("::")):
+    for level_name in (part.strip() for part in full_name.split(sep)):
         if not level_name:
             continue
         existing = await db.scalar(

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type DeckNode } from "@/lib/api/client";
@@ -58,6 +59,9 @@ export default function DecksPage() {
           Decks
         </h1>
         <div className="flex items-center gap-4 font-mono text-xs text-[var(--color-muted)]">
+          <Link href="/import" className="hover:text-[var(--color-chalk)]">
+            import
+          </Link>
           <span>{email}</span>
           <button type="button" onClick={handleLogout} className="hover:text-[var(--color-chalk)]">
             sign out
@@ -84,8 +88,12 @@ export default function DecksPage() {
 
       {decks.length === 0 ? (
         <p className="text-[var(--color-muted)]">
-          No decks yet. Create one above, using <code className="font-mono">::</code> to nest — e.g.{" "}
-          <code className="font-mono">Parent::Child</code>.
+          No decks yet.{" "}
+          <Link href="/import" className="underline decoration-[var(--color-muted)]/40 underline-offset-4">
+            Import an .apkg file
+          </Link>{" "}
+          to get started, or create one above using <code className="font-mono">::</code> to nest
+          — e.g. <code className="font-mono">Parent::Child</code>.
         </p>
       ) : (
         <DeckTree decks={decks} onDelete={handleDelete} />

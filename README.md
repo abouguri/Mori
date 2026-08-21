@@ -52,6 +52,14 @@ full path once, the parents are created automatically if they don't exist.
 </tr>
 </table>
 
+**Import**
+
+Upload an `.apkg`, watch it stream through a background worker — note
+types, notes, cards, and deduped media all land in one pass, with live
+progress and a final count.
+
+<img src="docs/screenshots/import.png" width="70%" alt="Import screen showing a completed import with note, card, and media counts">
+
 ## Status
 
 Early build. Shipped so far:
@@ -59,7 +67,8 @@ Early build. Shipped so far:
 - [x] Docker Compose skeleton — web, api, worker, db, redis, minio
 - [x] Auth — register, login, httpOnly cookie sessions
 - [x] Deck CRUD with `Parent::Child` hierarchy
-- [ ] `.apkg` import (legacy + modern schema)
+- [x] Legacy `.apkg` import — notes, cards, media, deck hierarchy, background worker with live progress
+- [ ] Modern `.apkg` format (schema v18, zstd, protobuf)
 - [ ] Card renderer (templates, cloze, LaTeX, media)
 - [ ] Review loop with FSRS scheduling
 - [ ] Offline support

@@ -4,9 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import async_session
 from app.main import app
-from app.models.base import Base
-from app.models.deck import Deck  # noqa: F401 — needed to populate Base.metadata
-from app.models.user import User  # noqa: F401 — needed to populate Base.metadata
+from app.models import Base  # importing app.models populates Base.metadata with every table
 
 
 @pytest.fixture(autouse=True)
@@ -25,6 +23,7 @@ async def db() -> AsyncSession:
 
 @pytest.fixture
 async def client() -> AsyncClient:
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    async with app.router.lifespan_context(app):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
