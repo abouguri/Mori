@@ -27,6 +27,15 @@ const RATING_COLOR: Record<1 | 2 | 3 | 4, string> = {
   3: "var(--color-good)",
   4: "var(--color-easy)",
 };
+// Again/Hard/Good sit dark enough for light text; Easy is lime (light), so
+// it needs dark text instead — can't use one text color for all four the
+// way a uniform dark-background theme could.
+const RATING_TEXT: Record<1 | 2 | 3 | 4, string> = {
+  1: "var(--color-depth)",
+  2: "var(--color-depth)",
+  3: "var(--color-depth)",
+  4: "var(--color-good)",
+};
 
 function timeUntil(iso: string): string {
   const ms = new Date(iso).getTime() - Date.now();
@@ -355,7 +364,7 @@ export default function StudyPage() {
             <button
               type="button"
               onClick={reveal}
-              className="mt-6 w-full rounded-[var(--radius-control)] bg-[var(--color-slate)] py-3 font-mono text-sm text-[var(--color-chalk)]"
+              className="mt-6 w-full rounded-[var(--radius-control)] bg-[var(--color-slate)] py-3 font-mono text-sm text-[var(--color-ink)]"
             >
               Space / Enter to reveal
             </button>
@@ -371,8 +380,8 @@ export default function StudyPage() {
                     onMouseEnter={() => setHoveredRating(rating)}
                     onMouseLeave={() => setHoveredRating(null)}
                     onClick={() => rate(rating)}
-                    className="rounded-[var(--radius-control)] py-3 text-sm font-medium text-[var(--color-depth)] disabled:opacity-50"
-                    style={{ background: RATING_COLOR[rating] }}
+                    className="rounded-[var(--radius-control)] py-3 text-sm font-medium disabled:opacity-50"
+                    style={{ background: RATING_COLOR[rating], color: RATING_TEXT[rating] }}
                   >
                     {RATING_LABELS[rating]}
                     <span className="ml-1.5 font-mono text-xs opacity-70">{rating}</span>

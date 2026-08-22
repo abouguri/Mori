@@ -43,8 +43,8 @@ export default function DeckStatsPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
           Stats
         </h1>
         <Link
@@ -63,7 +63,7 @@ export default function DeckStatsPage() {
             <p className="mb-1 font-mono text-xs uppercase tracking-[0.14em] text-[var(--color-muted)]">
               Retention
             </p>
-            <p className="font-[family-name:var(--font-display)] text-3xl font-extrabold text-[var(--color-card)]">
+            <p className="font-[family-name:var(--font-display)] text-3xl font-extrabold text-[var(--color-chalk)]">
               {stats.retention_rate === null
                 ? "—"
                 : `${Math.round(stats.retention_rate * 100)}%`}

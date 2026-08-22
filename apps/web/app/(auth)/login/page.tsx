@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api/client";
+import { MoriMark } from "@/components/MoriMark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,8 +33,9 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <h1 className="mb-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-[-0.025em] text-[var(--color-card)]">
-        MORI<span className="text-[var(--color-good)]">.</span>
+      <MoriMark className="mb-5 h-8 text-[var(--color-chalk)]" nodeFill="var(--color-depth)" />
+      <h1 className="mb-1 font-[family-name:var(--font-display)] text-3xl font-extrabold tracking-[-0.025em] text-[var(--color-chalk)]">
+        Mori<span className="text-[var(--color-lime)]">.</span>
       </h1>
       <p className="mb-8 text-sm text-[var(--color-muted)]">
         {mode === "login" ? "Welcome back." : "Everything you learn is decaying right now."}
@@ -46,7 +48,7 @@ export default function LoginPage() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-[var(--radius-control)] border border-[var(--color-slate)] bg-[var(--color-slate)] px-3 py-2 text-[var(--color-chalk)] outline-none focus:border-[var(--color-good)]"
+          className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-slate)] px-3 py-2 text-[var(--color-ink)] outline-none focus:border-[var(--color-good)]"
         />
         <input
           type="password"
@@ -55,7 +57,7 @@ export default function LoginPage() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-[var(--radius-control)] border border-[var(--color-slate)] bg-[var(--color-slate)] px-3 py-2 text-[var(--color-chalk)] outline-none focus:border-[var(--color-good)]"
+          className="rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-slate)] px-3 py-2 text-[var(--color-ink)] outline-none focus:border-[var(--color-good)]"
         />
 
         {error && <p className="text-sm text-[var(--color-again)]">{error}</p>}
@@ -63,7 +65,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 rounded-[var(--radius-control)] bg-[var(--color-good)] px-3 py-2 font-medium text-[var(--color-depth)] disabled:opacity-50"
+          className="mt-2 rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-3 py-2 font-medium text-[var(--color-depth)] disabled:opacity-50"
         >
           {mode === "login" ? "Sign in" : "Create account"}
         </button>

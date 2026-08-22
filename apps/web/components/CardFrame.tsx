@@ -85,10 +85,10 @@ export function CardFrame({
 <meta http-equiv="Content-Security-Policy" content="${csp}">
 <style>${katexCss}</style>
 <style>
-  body { margin: 0; font-family: Arial, sans-serif; font-size: 20px; text-align: center; padding: 1.5rem; box-sizing: border-box; }
-  .cloze { color: #7c8cf8; font-weight: 600; }
-  .hint summary { cursor: pointer; color: #2fb6a8; }
-  .latex-error pre { color: #e2574c; font-size: 13px; white-space: pre-wrap; }
+  body { margin: 0; font-family: Arial, sans-serif; font-size: 20px; text-align: center; padding: 1.5rem; box-sizing: border-box; color: #07100A; }
+  .cloze { color: #6B8F0F; font-weight: 600; }
+  .hint summary { cursor: pointer; color: #003A0B; }
+  .latex-error pre { color: #B23B2E; font-size: 13px; white-space: pre-wrap; }
   ${css}
   ${revealCss}
 </style>
@@ -106,7 +106,7 @@ export function CardFrame({
   }, [card, side, resolveMedia, mediaOrigin]);
 
   if (srcDoc === null) {
-    return <div className="h-48 w-full animate-pulse rounded-[var(--radius-card)] bg-[var(--color-slate)]" />;
+    return <div className="h-48 w-full animate-pulse rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-slate)]" />;
   }
 
   return (
@@ -114,7 +114,7 @@ export function CardFrame({
       title={card.template_name}
       sandbox=""
       srcDoc={srcDoc}
-      className="h-48 w-full overflow-auto rounded-[var(--radius-card)] border-0 bg-[var(--color-card)]"
+      className="h-48 w-full overflow-auto rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)]"
     />
   );
 }

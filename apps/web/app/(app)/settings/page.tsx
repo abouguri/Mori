@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, type OptimizeJob } from "@/lib/api/client";
+import { MoriMark } from "@/components/MoriMark";
 
 // Mirrors MIN_REVIEWS_FOR_OPTIMIZATION in services/api/app/services/fsrs_optimize.py.
 const MIN_REVIEWS_FOR_OPTIMIZATION = 400;
@@ -52,16 +53,19 @@ export default function SettingsPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
-          Settings
-        </h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
+        <div className="flex items-center gap-3">
+          <MoriMark className="h-6 text-[var(--color-chalk)]" nodeFill="var(--color-depth)" />
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
+            Settings
+          </h1>
+        </div>
         <Link href="/decks" className="font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-chalk)]">
           ← decks
         </Link>
       </div>
 
-      <div className="rounded-[var(--radius-card)] border border-[var(--color-slate)] p-5">
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] p-5">
         <h2 className="mb-2 font-medium text-[var(--color-chalk)]">Tune your review schedule</h2>
         <p className="mb-4 text-sm text-[var(--color-muted)]">
           Mori starts everyone on the same FSRS parameters. Once you have at least{" "}
@@ -73,7 +77,7 @@ export default function SettingsPage() {
           type="button"
           onClick={handleOptimize}
           disabled={busy}
-          className="rounded-[var(--radius-control)] bg-[var(--color-good)] px-4 py-2 text-sm font-medium text-[var(--color-depth)] disabled:opacity-50"
+          className="rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-4 py-2 text-sm font-medium text-[var(--color-depth)] disabled:opacity-50"
         >
           {busy ? "Tuning…" : "Tune my review schedule"}
         </button>

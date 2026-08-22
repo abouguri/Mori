@@ -1,35 +1,44 @@
 @import "tailwindcss";
 
 @theme {
-  /* ground */
-  --color-depth: #0e1524; /* review canvas */
-  --color-slate: #1a2436; /* raised surface on dark */
-  --color-surface: #eef1f6; /* light management screens */
-  --color-card: #fcfdff; /* the flashcard itself, both modes */
+  /* ground — Mori's brand identity (see docs/design.md) is a single light
+     theme, so the old dark/light duality these names came from is gone.
+     Names are kept as-is (only the values changed) since ~a dozen files
+     already reference them — --color-chalk in particular no longer means
+     "light text for a dark background," it's just "primary UI text." */
+  --color-depth: #f8faf1; /* page background */
+  --color-slate: #eef3e7; /* recessed surface: inputs, hover states */
+  --color-surface: #fcfdf8; /* raised panel background */
+  --color-card: #fcfdf8; /* the flashcard itself */
 
   /* ink */
-  --color-ink: #101726;
-  --color-chalk: #dde3ee;
-  --color-muted: #8b96a8;
+  --color-ink: #07100a; /* body copy */
+  --color-chalk: #003a0b; /* headings, primary UI text — brand green */
+  --color-muted: #657168;
 
-  /* ratings — the only saturated colours in the app */
-  --color-again: #e2574c;
-  --color-hard: #d9a441;
-  --color-good: #2fb6a8;
-  --color-easy: #7c8cf8;
+  /* ratings — distinct hues (fast to tell apart mid-review), retuned to
+     sit inside the green/lime brand instead of generic red/amber/teal/violet */
+  --color-again: #b23b2e;
+  --color-hard: #8f5c15;
+  --color-good: #003a0b;
+  --color-easy: #a5e119;
 
-  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
-  --font-body: "Source Serif 4", Georgia, serif;
-  --font-ui: "Inter", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-lime: #a5e119;
+  --color-line: rgba(0, 58, 11, 0.14);
 
-  --radius-card: 14px;
-  --radius-control: 8px;
+  --font-display: var(--font-inter);
+  --font-body: var(--font-inter);
+  --font-ui: var(--font-inter);
+  --font-mono: var(--font-ibm-plex-mono);
+
+  --radius-card: 24px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
 }
 
 body {
   background: var(--color-depth);
-  color: var(--color-chalk);
+  color: var(--color-ink);
   font-family: var(--font-ui);
 }
 

@@ -24,7 +24,7 @@ export function DeckTree({
           >
             <Link
               href={`/decks/${deck.id}`}
-              className="font-[family-name:var(--font-ui)] text-[var(--color-chalk)] hover:text-[var(--color-good)]"
+              className="font-[family-name:var(--font-ui)] text-[var(--color-ink)] hover:text-[var(--color-good)]"
             >
               {deck.name}
             </Link>

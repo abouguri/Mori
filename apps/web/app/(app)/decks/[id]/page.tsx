@@ -42,8 +42,8 @@ export default function DeckPreviewPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
           Preview
         </h1>
         <div className="flex items-center gap-4 font-mono text-xs text-[var(--color-muted)]">
@@ -70,7 +70,7 @@ export default function DeckPreviewPage() {
       <div className="flex flex-col gap-8">
         {cards !== null && mediaOrigin &&
           cards.map((card) => (
-            <div key={card.id} className="rounded-[var(--radius-card)] border border-[var(--color-slate)] p-4">
+            <div key={card.id} className="rounded-[var(--radius-card)] border border-[var(--color-line)] p-4">
               <p className="mb-3 font-mono text-xs text-[var(--color-muted)]">{card.template_name}</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>

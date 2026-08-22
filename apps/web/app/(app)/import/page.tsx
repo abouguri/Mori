@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, type ImportJob } from "@/lib/api/client";
+import { MoriMark } from "@/components/MoriMark";
 
 export default function ImportPage() {
   const router = useRouter();
@@ -53,10 +54,13 @@ export default function ImportPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
-          Import a deck
-        </h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
+        <div className="flex items-center gap-3">
+          <MoriMark className="h-6 text-[var(--color-chalk)]" nodeFill="var(--color-depth)" />
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
+            Import a deck
+          </h1>
+        </div>
         <Link href="/decks" className="font-mono text-xs text-[var(--color-muted)] hover:text-[var(--color-chalk)]">
           ← decks
         </Link>
@@ -72,12 +76,12 @@ export default function ImportPage() {
           type="file"
           accept=".apkg"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="flex-1 rounded-[var(--radius-control)] border border-[var(--color-slate)] bg-[var(--color-slate)] px-3 py-2 text-sm text-[var(--color-chalk)] file:mr-3 file:rounded-[var(--radius-control)] file:border-0 file:bg-[var(--color-good)] file:px-3 file:py-1 file:text-[var(--color-depth)]"
+          className="flex-1 rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-slate)] px-3 py-2 text-sm text-[var(--color-ink)] file:mr-3 file:rounded-[var(--radius-control)] file:border-0 file:bg-[var(--color-good)] file:px-3 file:py-1 file:text-[var(--color-depth)]"
         />
         <button
           type="submit"
           disabled={!file || busy}
-          className="rounded-[var(--radius-control)] bg-[var(--color-good)] px-4 py-2 text-sm font-medium text-[var(--color-depth)] disabled:opacity-50"
+          className="rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-4 py-2 text-sm font-medium text-[var(--color-depth)] disabled:opacity-50"
         >
           Import deck
         </button>
@@ -86,7 +90,7 @@ export default function ImportPage() {
       {error && <p className="mb-4 text-sm text-[var(--color-again)]">{error}</p>}
 
       {job && (
-        <div className="rounded-[var(--radius-card)] border border-[var(--color-slate)] p-5">
+        <div className="rounded-[var(--radius-card)] border border-[var(--color-line)] p-5">
           <div className="mb-3 flex items-center justify-between font-mono text-xs text-[var(--color-muted)]">
             <span>{job.filename}</span>
             <span>{job.status}</span>

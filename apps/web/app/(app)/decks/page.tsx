@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type DeckNode } from "@/lib/api/client";
 import { DeckTree } from "@/components/DeckTree";
+import { MoriMark } from "@/components/MoriMark";
 
 export default function DecksPage() {
   const router = useRouter();
@@ -54,10 +55,13 @@ export default function DecksPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-card)]">
-          Decks
-        </h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
+        <div className="flex items-center gap-3">
+          <MoriMark className="h-6 text-[var(--color-chalk)]" nodeFill="var(--color-depth)" />
+          <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
+            Decks
+          </h1>
+        </div>
         <div className="flex items-center gap-4 font-mono text-xs text-[var(--color-muted)]">
           <Link href="/import" className="hover:text-[var(--color-chalk)]">
             import
@@ -77,11 +81,11 @@ export default function DecksPage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Japanese::N5::Verbs"
-          className="flex-1 rounded-[var(--radius-control)] border border-[var(--color-slate)] bg-[var(--color-slate)] px-3 py-2 font-mono text-sm text-[var(--color-chalk)] outline-none focus:border-[var(--color-good)]"
+          className="flex-1 rounded-[var(--radius-control)] border border-[var(--color-line)] bg-[var(--color-slate)] px-3 py-2 font-mono text-sm text-[var(--color-ink)] outline-none focus:border-[var(--color-good)]"
         />
         <button
           type="submit"
-          className="rounded-[var(--radius-control)] bg-[var(--color-good)] px-4 py-2 text-sm font-medium text-[var(--color-depth)]"
+          className="rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-4 py-2 text-sm font-medium text-[var(--color-depth)]"
         >
           New deck
         </button>
