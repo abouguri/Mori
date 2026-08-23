@@ -8,8 +8,8 @@
 <p align="center"><em>Everything you learn is decaying right now. Mori schedules the argument.</em></p>
 
 <p align="center">
-  <img alt="licence" src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-2FB6A8">
-  <img alt="status" src="https://img.shields.io/badge/status-early%20build-D9A441">
+  <img alt="licence" src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-003A0B">
+  <img alt="status" src="https://img.shields.io/badge/status-early%20build-8F5C15">
 </p>
 
 <p align="center">
