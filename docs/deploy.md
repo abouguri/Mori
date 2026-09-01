@@ -1,12 +1,21 @@
 # Deploying Mori
 
 A split deploy: the Next.js frontend on Vercel, the API + worker on a free
-Oracle Cloud VM, Postgres on Neon, Redis on Upstash, media on Cloudflare
-R2. Every piece here has a genuine free tier at the scale a new app runs
-at — see the cost breakdown in the PR/commit history if you want the
-research behind these picks. Total: **$0/month**, at the cost of more
+Google Cloud `e2-micro` VM, Postgres on Neon, Redis on Upstash, media on
+Cloudflare R2. Every piece here has a genuine free tier at the scale a new
+app runs at — see the cost breakdown in the PR/commit history if you want
+the research behind these picks. Total: **$0/month**, at the cost of more
 manual ops than a managed PaaS (you own VM updates, uptime, and backups
 outside what Neon/Upstash already give you for their own services).
+
+**Why GCP over Oracle Cloud:** Oracle's Always Free VM (2 OCPU / 12 GB RAM,
+any region) is the roomier option if their signup flow works for you —
+but it rejects a meaningful fraction of legitimate signups outright with
+a generic fraud-check error ("unable to finalize your registration"),
+independent of VPN use, card type, or anything else identifiable. GCP's
+e2-micro is smaller (1 GB RAM, US regions only) but its signup is
+reliable. If Oracle works for you, use it instead and skip the swap-file
+step below — 12 GB is enough headroom not to need it.
 
 Do these roughly in order — later steps need values from earlier ones.
 
@@ -25,7 +34,7 @@ Do these roughly in order — later steps need values from earlier ones.
 ## 2. Upstash (Redis)
 
 1. Create a database at [upstash.com](https://upstash.com) (free, no
-   card) — pick a region close to wherever you put the Oracle VM.
+   card) — pick a region close to wherever you put the GCP VM (us-central1 etc.).
 2. Copy the connection string in `redis://default:PASSWORD@HOST:PORT`
    form from the database's dashboard.
 3. Save it as `REDIS_URL` for step 6.
@@ -46,29 +55,48 @@ Do these roughly in order — later steps need values from earlier ones.
    - `S3_ACCESS_KEY` / `S3_SECRET_KEY` from step 3
    - `S3_BUCKET=mori-media`
 
-## 4. Oracle Cloud (the VM running `api` + `worker`)
+## 4. Google Cloud (the VM running `api` + `worker`)
 
-1. Sign up at [cloud.oracle.com](https://cloud.oracle.com) for an Always
-   Free account. (Their signup flow is more involved than most — expect a
-   card for identity verification even though the Always Free resources
-   themselves aren't charged.)
-2. Create a compute instance: **Ampere A1** shape (ARM), the Always Free
-   allocation is 2 OCPU / 12 GB RAM — one instance using the whole
-   allocation is plenty for this. Ubuntu is the simplest image choice.
-   Save the SSH key pair it gives you.
-3. In the instance's **Virtual Cloud Network → Security Lists**, add
-   ingress rules for TCP 80 and TCP 443 from `0.0.0.0/0` (needed for
-   Let's Encrypt's HTTP-01 challenge and for HTTPS traffic itself — the
-   default Oracle security list only opens 22).
+1. Sign up at [cloud.google.com/free](https://cloud.google.com/free) and
+   create a project. A card is required for identity verification even
+   though the Always Free resources themselves aren't charged.
+2. Create a compute instance (Compute Engine → VM instances → Create
+   Instance):
+   - **Machine type**: `e2-micro`
+   - **Region**: one of `us-west1`, `us-central1`, `us-east1` — Always
+     Free only applies in these three; any other region bills normally.
+   - **Boot disk**: Ubuntu, up to 30 GB standard persistent disk (the
+     free allowance) — the default is fine.
+   - Under **Firewall**, check "Allow HTTP traffic" and "Allow HTTPS
+     traffic" — this creates the firewall rules for ports 80/443 that
+     Let's Encrypt's HTTP-01 challenge and HTTPS itself both need (GCP's
+     default network otherwise only opens SSH).
+   - Create it, and generate/download an SSH key when prompted, or use
+     `gcloud compute ssh` (installs its own key automatically) — either
+     works with the steps below.
+3. Note the instance's public IP — it's static for the life of the
+   instance (as long as you don't stop/restart with an ephemeral IP
+   config; the console shows whether it's ephemeral or static), and
+   you'll need it for step 5.
 4. SSH in and install Docker:
    ```sh
-   ssh -i your-key.pem ubuntu@<instance-public-ip>
+   ssh -i your-key.pem you@<instance-public-ip>
    curl -fsSL https://get.docker.com | sudo sh
    sudo usermod -aG docker $USER
    # log out and back in for the group change to take effect
    ```
-5. Note the instance's public IP — it's static for the life of the
-   instance, and you'll need it for step 5.
+5. **Add swap** — e2-micro's 1 GB RAM isn't enough headroom for the
+   worker image's FSRS optimizer job (torch + pandas alone need several
+   hundred MB just to import) without it. The optimizer job isn't
+   latency-sensitive, so swapping during it is a fine tradeoff to keep
+   the feature working on a box this small:
+   ```sh
+   sudo fallocate -l 4G /swapfile
+   sudo chmod 600 /swapfile
+   sudo mkswap /swapfile
+   sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
 
 ## 5. DuckDNS (free subdomain for the API)
 
@@ -80,7 +108,7 @@ mixed content).
 1. Sign in at [duckdns.org](https://www.duckdns.org) (GitHub/Google
    login, no separate account).
 2. Add a subdomain, e.g. `mori-api` → `mori-api.duckdns.org`.
-3. Point it at the Oracle VM's public IP from step 4.5 and save.
+3. Point it at the GCP VM's public IP from step 4.3 and save.
 4. Save `mori-api.duckdns.org` as `API_DOMAIN` for step 6. If the VM's IP
    ever changes (it won't unless you recreate the instance), update it
    here — DuckDNS also has a small curl-based updater script on their
@@ -88,7 +116,7 @@ mixed content).
 
 ## 6. Deploy the backend
 
-On the Oracle VM:
+On the GCP VM:
 
 ```sh
 git clone <your-fork-url> mori
@@ -138,7 +166,7 @@ return `{"status":"ok"}`.
 
 ## 8. Close the loop: point CORS at the real frontend URL
 
-Back on the Oracle VM, edit `.env`:
+Back on the GCP VM, edit `.env`:
 
 ```
 CORS_ORIGINS=["https://your-actual-project.vercel.app"]
@@ -162,10 +190,10 @@ cookie/CORS pairing — double check `COOKIE_SAMESITE=none`,
 
 ## What's still self-managed
 
-- **VM updates**: `apt update && apt upgrade` on the Oracle VM yourself,
+- **VM updates**: `apt update && apt upgrade` on the GCP VM yourself,
   periodically. Nothing automates this.
 - **Backups**: Neon and Upstash back up their own services; R2 media
-  isn't separately backed up here. Nothing on the Oracle VM needs backing
+  isn't separately backed up here. Nothing on the GCP VM needs backing
   up since it's stateless (api + worker only — no volumes with real data).
 - **Redeploys**: `git pull && docker compose -f docker-compose.prod.yml up
   -d --build` on the VM for backend changes; Vercel redeploys the
