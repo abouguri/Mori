@@ -8,6 +8,7 @@
 <p align="center"><em>Everything you learn is decaying right now. Mori schedules the argument.</em></p>
 
 <p align="center">
+  <a href="https://mori-web-eight.vercel.app"><img alt="live demo" src="https://img.shields.io/badge/demo-live-A5E119"></a>
   <img alt="licence" src="https://img.shields.io/badge/licence-AGPL--3.0--or--later-003A0B">
   <img alt="status" src="https://img.shields.io/badge/status-early%20build-8F5C15">
 </p>
@@ -133,9 +134,15 @@ free up the standard ports.
 
 ### Deploying
 
-[docs/deploy.md](docs/deploy.md) walks through a $0/month split deploy —
-Vercel for the frontend, a free-tier Oracle Cloud VM for the API and
-worker, Neon for Postgres, Upstash for Redis, Cloudflare R2 for media.
+Live at [mori-web-eight.vercel.app](https://mori-web-eight.vercel.app).
+[docs/deploy.md](docs/deploy.md) walks through the actual split deploy —
+Vercel for the frontend, an AWS EC2 instance for the API and worker, Neon
+for Postgres, Upstash for Redis, Cloudflare R2 for media. Neon/Upstash/R2
+are free indefinitely at this scale; the compute piece currently runs on
+a temporary AWS credit balance rather than a permanent free tier (Oracle
+Cloud and GCP both offer a genuinely indefinite free VM, at the cost of
+their own signup friction — the guide covers the tradeoffs and exact
+steps for either).
 
 ## Development
 
