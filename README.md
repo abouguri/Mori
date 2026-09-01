@@ -26,6 +26,46 @@ on any device — a lab computer, a phone browser, a locked-down work laptop
 
 No desktop install. No AnkiWeb account. Just the deck you already have.
 
+## Architecture
+
+```mermaid
+graph LR
+  Browser -->|HTTPS + cookies| Web["Next.js<br/>apps/web"]
+  Web -->|REST| API["FastAPI<br/>services/api"]
+  API --> DB[("Postgres")]
+  API --> Redis[("Redis")]
+  API --> Storage[("S3-compatible<br/>media storage")]
+  Redis -. enqueues jobs .-> Worker["ARQ worker<br/>import · FSRS optimizer"]
+  Worker --> DB
+  Worker --> Storage
+```
+
+`apps/web` and `packages/renderer` (the Anki template/cloze/LaTeX engine,
+dependency-free and unit-tested on its own) share an npm workspace so the
+renderer's output stays identical whether it's previewing a card or
+actually running a review. `services/api` is async end to end — FastAPI,
+SQLAlchemy 2.0, asyncpg — with imports and FSRS parameter tuning running
+as ARQ background jobs rather than blocking a request, since a 10,000-card
+deck or a 400-review optimization pass both take longer than an HTTP
+request should.
+
+## Design system
+
+<img src="docs/screenshots/design-system.png" width="85%" alt="Mori's design tokens — the mark, color palette, and Inter typography">
+
+One continuous five-node path forms the mark: entry dot → peak → valley →
+peak → terminal dot — hollow nodes read as review checkpoints, solid ones
+as entry and reinforced memory. Deep green (`#003A0B`) carries the brand's
+weight; lime (`#A5E119`) is reserved as the recall signal — the one
+accent color, used for emphasis and the "Easy" rating rather than spread
+across the UI. Inter is the only typeface, one family across headlines,
+body copy, and UI chrome (self-hosted via `next/font`, not a CDN request).
+Rating colors stay four distinct hues rather than collapsing to the
+two-color brand palette — legible at a glance mid-review mattered more
+than strict on-brand purity, so `apps/web/styles/tokens.css` retunes them
+to sit inside the palette instead (`Again` warm red, `Hard` a WCAG-AA-checked
+amber, `Good` the brand green, `Easy` the brand lime).
+
 ## Screens
 
 <table>
@@ -134,15 +174,39 @@ free up the standard ports.
 
 ### Deploying
 
-Live at [mori-web-eight.vercel.app](https://mori-web-eight.vercel.app).
-[docs/deploy.md](docs/deploy.md) walks through the actual split deploy —
-Vercel for the frontend, an AWS EC2 instance for the API and worker, Neon
-for Postgres, Upstash for Redis, Cloudflare R2 for media. Neon/Upstash/R2
-are free indefinitely at this scale; the compute piece currently runs on
-a temporary AWS credit balance rather than a permanent free tier (Oracle
-Cloud and GCP both offer a genuinely indefinite free VM, at the cost of
-their own signup friction — the guide covers the tradeoffs and exact
-steps for either).
+Live at [mori-web-eight.vercel.app](https://mori-web-eight.vercel.app) —
+a split deploy across five providers, chosen to run at $0–10/month rather
+than the cost of a single all-in-one PaaS:
+
+```mermaid
+graph LR
+  U(("Browser")) -->|HTTPS| V["Vercel<br/>apps/web"]
+  V -->|HTTPS + CORS| C
+
+  subgraph EC2["AWS EC2 t3.micro"]
+    C["Caddy<br/>auto HTTPS"] --> A["api"]
+    W["worker"]
+  end
+
+  A --> N[("Neon<br/>Postgres")]
+  A --> UP[("Upstash<br/>Redis")]
+  A --> R[("Cloudflare R2<br/>media")]
+  UP -. enqueues jobs .-> W
+  W --> N
+  W --> R
+```
+
+[docs/deploy.md](docs/deploy.md) walks through the exact steps. Neon,
+Upstash, and R2 are free indefinitely at this scale; the compute piece
+currently runs on a temporary AWS credit balance rather than a permanent
+free tier — Oracle Cloud and GCP both offer a genuinely indefinite free
+VM instead, at the cost of their own signup friction (Oracle's fraud
+check rejects a fair number of legitimate signups outright; GCP now
+requires a one-time prepayment for some new accounts). The guide covers
+the tradeoffs and exact steps for whichever one you land on. `Caddy`
+handles automatic HTTPS via Let's Encrypt; `api` and `worker` are the
+same two Docker images `docker-compose.yml` builds for local dev, just
+pointed at managed services instead of local containers.
 
 ## Development
 
