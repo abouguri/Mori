@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "../styles/tokens.css";
 
@@ -17,6 +17,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Mori",
   description: "Imports Anki .apkg decks and schedules them with FSRS.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#003A0B",
 };
 
 export default function RootLayout({
