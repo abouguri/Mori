@@ -60,7 +60,7 @@ export interface User {
   day_start_hour: number;
 }
 
-export interface DeckNode {
+export interface Deck {
   id: string;
   parent_id: string | null;
   name: string;
@@ -68,6 +68,9 @@ export interface DeckNode {
   position: number;
   new_per_day: number;
   reviews_per_day: number;
+}
+
+export interface DeckNode extends Deck {
   card_count: number;
   due_count: number;
   children: DeckNode[];
@@ -171,12 +174,20 @@ export const api = {
 
   me: () => request<User>("/auth/me"),
 
+  updateMe: (body: { timezone?: string; day_start_hour?: number }) =>
+    request<User>("/users/me", { method: "PATCH", body: JSON.stringify(body) }),
+
   listDecks: () => request<DeckNode[]>("/decks"),
 
+  getDeck: (id: string) => request<Deck>(`/decks/${id}`),
+
   createDeck: (name: string) =>
-    request<DeckNode>("/decks", { method: "POST", body: JSON.stringify({ name }) }),
+    request<Deck>("/decks", { method: "POST", body: JSON.stringify({ name }) }),
 
   deleteDeck: (id: string) => request<void>(`/decks/${id}`, { method: "DELETE" }),
+
+  updateDeck: (id: string, body: { new_per_day?: number; reviews_per_day?: number }) =>
+    request<Deck>(`/decks/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
 
   createImport: (file: File) => {
     const body = new FormData();

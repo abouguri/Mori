@@ -54,3 +54,52 @@ async def test_logout_clears_session(client: AsyncClient) -> None:
     await client.post("/auth/logout")
     response = await client.get("/auth/me")
     assert response.status_code == 401
+
+
+async def test_update_me_sets_timezone_and_day_start_hour(client: AsyncClient) -> None:
+    await client.post(
+        "/auth/register", json={"email": "ada@example.com", "password": "correct horse battery"}
+    )
+    response = await client.patch(
+        "/users/me", json={"timezone": "America/New_York", "day_start_hour": 3}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["timezone"] == "America/New_York"
+    assert body["day_start_hour"] == 3
+
+    me = await client.get("/auth/me")
+    assert me.json()["timezone"] == "America/New_York"
+    assert me.json()["day_start_hour"] == 3
+
+
+async def test_update_me_rejects_unknown_timezone(client: AsyncClient) -> None:
+    await client.post(
+        "/auth/register", json={"email": "ada@example.com", "password": "correct horse battery"}
+    )
+    response = await client.patch("/users/me", json={"timezone": "Not/AZone"})
+    assert response.status_code == 422
+
+
+async def test_update_me_rejects_out_of_range_day_start_hour(client: AsyncClient) -> None:
+    await client.post(
+        "/auth/register", json={"email": "ada@example.com", "password": "correct horse battery"}
+    )
+    response = await client.patch("/users/me", json={"day_start_hour": 24})
+    assert response.status_code == 422
+
+
+async def test_update_me_requires_auth(client: AsyncClient) -> None:
+    response = await client.patch("/users/me", json={"day_start_hour": 5})
+    assert response.status_code == 401
+
+
+async def test_update_me_leaves_unspecified_fields_unchanged(client: AsyncClient) -> None:
+    await client.post(
+        "/auth/register", json={"email": "ada@example.com", "password": "correct horse battery"}
+    )
+    await client.patch("/users/me", json={"timezone": "Europe/Paris"})
+    response = await client.patch("/users/me", json={"day_start_hour": 6})
+    assert response.status_code == 200
+    assert response.json()["timezone"] == "Europe/Paris"
+    assert response.json()["day_start_hour"] == 6

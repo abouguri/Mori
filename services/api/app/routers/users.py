@@ -8,8 +8,24 @@ from app.deps import get_current_user
 from app.models.optimize_job import OptimizeJob, OptimizeStatus
 from app.models.user import User
 from app.schemas.optimize_job import OptimizeJobRead
+from app.schemas.user import UserRead, UserUpdate
 
 router = APIRouter(prefix="/users/me", tags=["users"])
+
+
+@router.patch("", response_model=UserRead)
+async def update_me(
+    body: UserUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    if body.timezone is not None:
+        user.timezone = body.timezone
+    if body.day_start_hour is not None:
+        user.day_start_hour = body.day_start_hour
+    await db.commit()
+    await db.refresh(user)
+    return user
 
 
 @router.post(
