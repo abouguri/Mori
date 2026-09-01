@@ -196,17 +196,16 @@ graph LR
   W --> R
 ```
 
-[docs/deploy.md](docs/deploy.md) walks through the exact steps. Neon,
-Upstash, and R2 are free indefinitely at this scale; the compute piece
-currently runs on a temporary AWS credit balance rather than a permanent
-free tier — Oracle Cloud and GCP both offer a genuinely indefinite free
-VM instead, at the cost of their own signup friction (Oracle's fraud
-check rejects a fair number of legitimate signups outright; GCP now
-requires a one-time prepayment for some new accounts). The guide covers
-the tradeoffs and exact steps for whichever one you land on. `Caddy`
-handles automatic HTTPS via Let's Encrypt; `api` and `worker` are the
-same two Docker images `docker-compose.yml` builds for local dev, just
-pointed at managed services instead of local containers.
+Neon, Upstash, and R2 are free indefinitely at this scale; the compute
+piece currently runs on a temporary AWS credit balance rather than a
+permanent free tier — Oracle Cloud and GCP both offer a genuinely
+indefinite free VM instead, at the cost of their own signup friction
+(Oracle's fraud check rejects a fair number of legitimate signups
+outright; GCP now requires a one-time prepayment for some new accounts).
+`Caddy` handles automatic HTTPS via Let's Encrypt; `api` and `worker` are
+the same two Docker images `docker-compose.yml` builds for local dev,
+just pointed at managed services (`docker-compose.prod.yml`) instead of
+local containers.
 
 ## Development
 

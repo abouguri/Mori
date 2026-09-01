@@ -1,9 +1,9 @@
-# Production compose for the backend half of the split deploy (see
-# docs/deploy.md). Runs only `api`, `worker`, and a Caddy reverse proxy for
-# automatic HTTPS — Postgres and Redis are external managed services (Neon,
-# Upstash), media goes to Cloudflare R2, and the frontend deploys to Vercel
-# separately. Real secrets come from a `.env` file on the host (never
-# committed — see .env.prod.example).
+# Production compose for the backend half of the split deploy (see the
+# README's "Deploying" section). Runs only `api`, `worker`, and a Caddy
+# reverse proxy for automatic HTTPS — Postgres and Redis are external
+# managed services (Neon, Upstash), media goes to Cloudflare R2, and the
+# frontend deploys to Vercel separately. Real secrets come from a `.env`
+# file on the host (never committed — see .env.prod.example).
 #
 # Usage on the host:
 #   docker compose -f docker-compose.prod.yml up -d --build
