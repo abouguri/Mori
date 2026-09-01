@@ -1,9 +1,11 @@
 import re
 import uuid
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.card import Card
 from app.models.deck import Deck
 from app.schemas.deck import DeckNode
 
@@ -61,8 +63,53 @@ async def create_deck_path(
     return leaf
 
 
-def build_tree(decks: list[Deck]) -> list[DeckNode]:
-    nodes = {deck.id: DeckNode.model_validate(deck) for deck in decks}
+async def card_counts_by_deck(db: AsyncSession, user_id: uuid.UUID) -> dict[uuid.UUID, int]:
+    rows = await db.execute(
+        select(Card.deck_id, func.count())
+        .where(Card.user_id == user_id)
+        .group_by(Card.deck_id)
+    )
+    return dict(rows.all())
+
+
+async def due_counts_by_deck(
+    db: AsyncSession, user_id: uuid.UUID, now: datetime, day_end: datetime
+) -> dict[uuid.UUID, int]:
+    """New + learning-due + review-due per deck, one query for every deck at
+    once — see DeckNode.due_count for why this doesn't match
+    queue_builder's cap-aware count exactly."""
+    rows = await db.execute(
+        select(
+            Card.deck_id,
+            func.count()
+            .filter(
+                (Card.state == 0)
+                | (Card.state.in_((1, 3)) & (Card.due <= now))
+                | ((Card.state == 2) & (Card.due <= day_end))
+            )
+            .label("due"),
+        )
+        .where(Card.user_id == user_id, Card.queue == 0)
+        .group_by(Card.deck_id)
+    )
+    return dict(rows.all())
+
+
+def build_tree(
+    decks: list[Deck],
+    card_counts: dict[uuid.UUID, int] | None = None,
+    due_counts: dict[uuid.UUID, int] | None = None,
+) -> list[DeckNode]:
+    # model_validate doesn't take an `update` kwarg (that's model_copy) — set
+    # the attribute directly instead; DeckNode isn't frozen, so this is fine.
+    counts = card_counts or {}
+    due = due_counts or {}
+    nodes: dict[uuid.UUID, DeckNode] = {}
+    for deck in decks:
+        node = DeckNode.model_validate(deck)
+        node.card_count = counts.get(deck.id, 0)
+        node.due_count = due.get(deck.id, 0)
+        nodes[deck.id] = node
     roots: list[DeckNode] = []
     for deck in decks:
         node = nodes[deck.id]

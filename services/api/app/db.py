@@ -27,7 +27,18 @@ def translate_database_url(raw_url: str) -> tuple[URL, dict[str, object]]:
 
 
 _url, _connect_args = translate_database_url(settings.database_url)
-engine = create_async_engine(_url, connect_args=_connect_args)
+# pool_pre_ping + pool_recycle: managed Postgres (Neon in particular —
+# confirmed directly against production logs, not guessed) closes idle
+# connections server-side (its compute can suspend/reclaim after a few
+# minutes idle), which the pool has no way to know about until a query on
+# that connection fails with `InterfaceError: connection is closed`. That
+# surfaced as intermittent 500s on ordinary navigation — pre_ping tests
+# each pooled connection with a cheap query before handing it out and
+# transparently reconnects if it's dead; recycle proactively retires
+# connections before they're likely to have been closed server-side.
+engine = create_async_engine(
+    _url, connect_args=_connect_args, pool_pre_ping=True, pool_recycle=300
+)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 

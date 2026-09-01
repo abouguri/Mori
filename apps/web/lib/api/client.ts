@@ -9,6 +9,28 @@ export class ApiError extends Error {
   }
 }
 
+// FastAPI's `detail` is a plain string for a hand-raised HTTPException, but
+// for a Pydantic validation failure (a 422 the framework generates itself,
+// before the request even reaches our code) it's an array of error objects
+// instead — confirmed directly against a real 422 response, not assumed.
+// Passing that array straight into Error's message coerces it to the
+// literal string "[object Object]" (JS's default array/object stringify),
+// which was rendering verbatim in the UI. Every field-validation error in
+// the app goes through this one function, so fixing it here fixes all of
+// them at once.
+function extractErrorMessage(detail: unknown, fallback: string): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) =>
+        item && typeof item === "object" && "msg" in item ? String(item.msg) : null,
+      )
+      .filter((m): m is string => m !== null);
+    if (messages.length > 0) return messages.join("; ");
+  }
+  return fallback;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const isFormData = init?.body instanceof FormData;
   const response = await fetch(`${API_URL}${path}`, {
@@ -22,7 +44,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, body.detail ?? response.statusText);
+    throw new ApiError(response.status, extractErrorMessage(body.detail, response.statusText));
   }
 
   if (response.status === 204) {
@@ -46,6 +68,8 @@ export interface DeckNode {
   position: number;
   new_per_day: number;
   reviews_per_day: number;
+  card_count: number;
+  due_count: number;
   children: DeckNode[];
 }
 

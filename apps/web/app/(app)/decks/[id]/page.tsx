@@ -61,7 +61,7 @@ export default function DeckPreviewPage() {
 
       {error && <p className="text-sm text-[var(--color-again)]">{error}</p>}
 
-      {cards === null && !error && <p className="text-[var(--color-muted)]">Loading…</p>}
+      {cards === null && !error && <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>}
 
       {cards !== null && cards.length === 0 && (
         <p className="text-[var(--color-muted)]">No cards in this deck yet.</p>
@@ -77,13 +77,13 @@ export default function DeckPreviewPage() {
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-muted)]">
                     Question
                   </p>
-                  <CardFrame card={card} side="question" resolveMedia={resolveMedia} mediaOrigin={mediaOrigin} />
+                  <CardFrame card={card} side="question" resolveMedia={resolveMedia} mediaOrigin={mediaOrigin} heightClassName="h-96" />
                 </div>
                 <div>
                   <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-muted)]">
                     Answer
                   </p>
-                  <CardFrame card={card} side="answer" resolveMedia={resolveMedia} mediaOrigin={mediaOrigin} />
+                  <CardFrame card={card} side="answer" resolveMedia={resolveMedia} mediaOrigin={mediaOrigin} heightClassName="h-96" />
                 </div>
               </div>
             </div>

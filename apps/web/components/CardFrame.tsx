@@ -20,11 +20,21 @@ export function CardFrame({
   side,
   resolveMedia,
   mediaOrigin,
+  heightClassName = "h-48",
 }: {
   card: PreviewCard;
   side: "question" | "answer";
   resolveMedia: (filename: string) => string;
   mediaOrigin: string;
+  // The sandboxed iframe (sandbox="", deliberately no allow-same-origin —
+  // §09.4) can't report its real content height back to the parent: a
+  // sandboxed-without-allow-same-origin iframe's contentDocument reads as
+  // an empty stub from here, confirmed directly, not just assumed from the
+  // spec. No auto-sizing is possible without weakening that sandbox, which
+  // isn't worth trading away for a cosmetic fit. Callers that show one card
+  // at a time (Study) keep the tighter default; Preview, which is for
+  // skimming many cards in a row, passes a taller box instead.
+  heightClassName?: string;
 }) {
   const [srcDoc, setSrcDoc] = useState<string | null>(null);
 
@@ -106,7 +116,11 @@ export function CardFrame({
   }, [card, side, resolveMedia, mediaOrigin]);
 
   if (srcDoc === null) {
-    return <div className="h-48 w-full animate-pulse rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-slate)]" />;
+    return (
+      <div
+        className={`${heightClassName} w-full animate-pulse rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-slate)]`}
+      />
+    );
   }
 
   return (
@@ -114,7 +128,7 @@ export function CardFrame({
       title={card.template_name}
       sandbox=""
       srcDoc={srcDoc}
-      className="h-48 w-full overflow-auto rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)]"
+      className={`${heightClassName} w-full overflow-auto rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-card)]`}
     />
   );
 }

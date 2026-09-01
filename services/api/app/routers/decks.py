@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -10,7 +11,8 @@ from app.deps import get_current_user
 from app.models.deck import Deck
 from app.models.user import User
 from app.schemas.deck import DeckCreate, DeckNode, DeckRead, DeckUpdate
-from app.services.decks import build_tree, create_deck_path
+from app.services.decks import build_tree, card_counts_by_deck, create_deck_path, due_counts_by_deck
+from app.services.queue_builder import day_bounds
 
 router = APIRouter(prefix="/decks", tags=["decks"])
 
@@ -29,7 +31,11 @@ async def list_decks(
     decks = (
         await db.scalars(select(Deck).where(Deck.user_id == user.id).order_by(Deck.position, Deck.name))
     ).all()
-    return build_tree(list(decks))
+    counts = await card_counts_by_deck(db, user.id)
+    now = datetime.now(UTC)
+    _day_start, day_end = day_bounds(user, now)
+    due = await due_counts_by_deck(db, user.id, now, day_end)
+    return build_tree(list(decks), counts, due)
 
 
 @router.post("", response_model=DeckRead, status_code=status.HTTP_201_CREATED)

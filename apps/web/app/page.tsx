@@ -1,7 +1,37 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { api, ApiError } from "@/lib/api/client";
 import { MoriMark } from "@/components/MoriMark";
 
 export default function Home() {
+  const router = useRouter();
+  // undefined: still checking · null: confirmed signed out (render the
+  // marketing page) — never renders the marketing page for a signed-in
+  // visitor, even briefly, since this previously showed "signed out" at /
+  // regardless of session state (confirmed directly: /decks loaded fine,
+  // no re-auth needed, right after / claimed to be logged out).
+  const [signedOut, setSignedOut] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    api
+      .me()
+      .then(() => router.replace("/decks"))
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          setSignedOut(true);
+        } else {
+          // Backend unreachable etc. — fall back to the marketing page
+          // rather than a blank screen forever.
+          setSignedOut(true);
+        }
+      });
+  }, [router]);
+
+  if (!signedOut) return null;
+
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6">
       <MoriMark

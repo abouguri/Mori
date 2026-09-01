@@ -326,7 +326,7 @@ export default function StudyPage() {
   if (card === undefined) {
     return (
       <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-6">
-        <p className="text-[var(--color-muted)]">Loading…</p>
+        <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>
       </main>
     );
   }
