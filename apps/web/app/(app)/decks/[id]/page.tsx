@@ -61,7 +61,19 @@ export default function DeckPreviewPage() {
 
       {error && <p className="text-sm text-[var(--color-again)]">{error}</p>}
 
-      {cards === null && !error && <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>}
+      {cards === null && !error && (
+        <div className="flex flex-col gap-8">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-[var(--radius-card)] border border-[var(--color-line)] p-4">
+              <div className="mb-3 h-3 w-20 animate-pulse rounded bg-[var(--color-slate)]" />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="h-48 animate-pulse rounded-[var(--radius-card)] bg-[var(--color-slate)]" />
+                <div className="h-48 animate-pulse rounded-[var(--radius-card)] bg-[var(--color-slate)]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {cards !== null && cards.length === 0 && (
         <p className="text-[var(--color-muted)]">No cards in this deck yet.</p>

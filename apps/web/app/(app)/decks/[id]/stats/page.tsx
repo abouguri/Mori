@@ -93,7 +93,20 @@ export default function DeckStatsPage() {
       {error && <p className="text-sm text-[var(--color-again)]">{error}</p>}
 
       {stats === null && !error && (
-        <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>
+        <div className="flex flex-col gap-10">
+          <div>
+            <div className="mb-1 h-3 w-16 animate-pulse rounded bg-[var(--color-slate)]" />
+            <div className="h-9 w-20 animate-pulse rounded bg-[var(--color-slate)]" />
+          </div>
+          <div>
+            <div className="mb-3 h-3 w-32 animate-pulse rounded bg-[var(--color-slate)]" />
+            <div className="h-24 animate-pulse rounded bg-[var(--color-slate)]" />
+          </div>
+          <div>
+            <div className="mb-3 h-3 w-28 animate-pulse rounded bg-[var(--color-slate)]" />
+            <div className="h-24 animate-pulse rounded bg-[var(--color-slate)]" />
+          </div>
+        </div>
       )}
 
       {stats && (
