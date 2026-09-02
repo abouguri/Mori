@@ -6,9 +6,11 @@
 export function MoriMark({
   className,
   nodeFill = "currentColor",
+  terminalFill = "currentColor",
 }: {
   className?: string;
   nodeFill?: string;
+  terminalFill?: string;
 }) {
   return (
     // w-auto alone isn't enough here: as a flex child, align-items:stretch
@@ -30,7 +32,7 @@ export function MoriMark({
       <circle cx="58" cy="38" r="10" fill={nodeFill} stroke="currentColor" strokeWidth="7" />
       <circle cx="100" cy="82" r="11" fill={nodeFill} stroke="currentColor" strokeWidth="7" />
       <circle cx="142" cy="39" r="10" fill={nodeFill} stroke="currentColor" strokeWidth="7" />
-      <circle cx="164" cy="26" r="13" fill="currentColor" />
+      <circle cx="164" cy="26" r="13" fill={terminalFill} />
     </svg>
   );
 }
