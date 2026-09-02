@@ -42,9 +42,9 @@
   --scrollbar-size: 12px;
   --scrollbar-min-length: 40px;
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(101, 113, 104, 0.28);
-  --scrollbar-thumb-hover: rgba(77, 91, 80, 0.44);
-  --scrollbar-thumb-active: rgba(143, 92, 21, 0.56);
+  --scrollbar-thumb: color-mix(in srgb, var(--color-chalk) 22%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--color-chalk) 38%, transparent);
+  --scrollbar-thumb-active: color-mix(in srgb, var(--color-lime) 42%, var(--color-chalk));
   --scrollbar-corner: transparent;
 }
 
