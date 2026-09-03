@@ -8,17 +8,17 @@ export function AuthFrame({ variant, form }: { variant: "login" | "signup"; form
   return (
     <main className={`${styles.page} ${isLogin ? styles.loginPage : styles.signupPage}`}>
       <MoriPattern
-        variant={isLogin ? "resurface" : "growth"}
+        variant={isLogin ? "recall-current" : "knowledge-canopy"}
         className={styles.backgroundPattern}
         style={isLogin ? {
-          "--mori-pattern-opacity": 0.052,
-          "--mori-pattern-scale": 1.3,
+          "--mori-pattern-opacity": 0.22,
+          "--mori-pattern-scale": 1.08,
           "--mori-pattern-x": "70%",
           "--mori-pattern-y": "58%",
           "--mori-pattern-rotation": "-4deg",
         } : {
-          "--mori-pattern-opacity": 0.042,
-          "--mori-pattern-scale": 1.18,
+          "--mori-pattern-opacity": 0.2,
+          "--mori-pattern-scale": 1.05,
           "--mori-pattern-density": 0.88,
           "--mori-pattern-x": "64%",
           "--mori-pattern-y": "12%",

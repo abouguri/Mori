@@ -165,7 +165,7 @@ export default function SettingsPage() {
   const busy = job !== null && (job.status === "queued" || job.status === "running");
 
   return (
-    <MoriPatternPage variant="grid" patternStyle={{ "--mori-pattern-opacity": 0.05 }}>
+    <MoriPatternPage variant="mnemonic-weave" patternStyle={{ "--mori-pattern-opacity": 0.12 }}>
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <div className="flex items-center gap-3">

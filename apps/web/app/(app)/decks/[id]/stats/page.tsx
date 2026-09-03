@@ -78,7 +78,7 @@ export default function DeckStatsPage() {
   }, [params.id, router]);
 
   return (
-    <MoriPatternPage variant="progress">
+    <MoriPatternPage variant="forgetting-topography" patternStyle={{ "--mori-pattern-opacity": 0.16 }}>
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">

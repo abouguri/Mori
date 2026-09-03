@@ -33,7 +33,7 @@ export default function Home() {
 
   if (!signedOut) {
     return (
-      <MoriPatternPage variant="resurface">
+      <MoriPatternPage variant="recall-current">
         <main className="flex min-h-screen items-center justify-center px-6">
           <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]">
             Finding your review path…
@@ -45,8 +45,8 @@ export default function Home() {
 
   return (
     <MoriPatternPage
-      variant="growth"
-      patternStyle={{ "--mori-pattern-opacity": 0.055, "--mori-pattern-scale": 1.18 }}
+      variant="synapse-river"
+      patternStyle={{ "--mori-pattern-opacity": 0.22, "--mori-pattern-scale": 1.06 }}
     >
       <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6">
         <MoriMark

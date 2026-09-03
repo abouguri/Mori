@@ -5,8 +5,8 @@ import { MoriPatternPage } from "@/components/MoriPattern";
 export default function NotFound() {
   return (
     <MoriPatternPage
-      variant="growth"
-      patternStyle={{ "--mori-pattern-opacity": 0.05, "--mori-pattern-rotation": "-4deg" }}
+      variant="interval-bloom"
+      patternStyle={{ "--mori-pattern-opacity": 0.18, "--mori-pattern-x": "72%", "--mori-pattern-y": "38%" }}
     >
       <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6">
         <MoriMark

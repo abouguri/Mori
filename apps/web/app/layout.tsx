@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "../styles/tokens.css";
+import "../styles/creative-patterns.css";
 
 // Previously referenced by name in tokens.css (var(--font-display) etc.)
 // without ever being loaded anywhere — browsers were silently falling back

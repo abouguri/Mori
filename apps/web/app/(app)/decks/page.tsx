@@ -66,7 +66,7 @@ export default function DecksPage() {
 
   if (decks === null) {
     return (
-      <MoriPatternPage variant="lattice">
+      <MoriPatternPage variant="constellation-memory">
         <main className="flex min-h-screen items-center justify-center px-6">
           <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]">Loading your decks…</p>
         </main>
@@ -77,7 +77,7 @@ export default function DecksPage() {
   const pendingCount = pendingDelete ? subtreeCardCount(pendingDelete) : 0;
 
   return (
-    <MoriPatternPage variant="lattice">
+    <MoriPatternPage variant="constellation-memory" patternStyle={{ "--mori-pattern-opacity": 0.16 }}>
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <div className="flex items-center gap-3">

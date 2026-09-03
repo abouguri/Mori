@@ -326,7 +326,7 @@ export default function StudyPage() {
 
   if (card === undefined) {
     return (
-      <MoriPatternPage variant="focus">
+      <MoriPatternPage variant="temporal-orbits">
       <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-6">
         <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>
       </main>
@@ -335,7 +335,7 @@ export default function StudyPage() {
   }
 
   return (
-    <MoriPatternPage variant="focus" patternStyle={{ "--mori-pattern-opacity": 0.065 }}>
+    <MoriPatternPage variant="temporal-orbits" patternStyle={{ "--mori-pattern-opacity": 0.15 }}>
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
       <div className="mb-6 flex items-center justify-between font-mono text-xs text-[var(--color-muted)]">
         <button type="button" onClick={() => router.push("/decks")} className="hover:text-[var(--color-chalk)]">
