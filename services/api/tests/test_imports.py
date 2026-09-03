@@ -89,6 +89,32 @@ async def test_reimport_same_deck_does_not_duplicate_notes(
     assert n5["name"] == "N5"
 
 
+async def test_multiple_deck_packages_import_for_the_same_user(
+    client: AsyncClient, tmp_path: Path
+) -> None:
+    await _register(client)
+
+    language_path = tmp_path / "language.apkg"
+    science_path = tmp_path / "science.apkg"
+    build_legacy_apkg(
+        language_path,
+        basic_notes=[("bonjour", "hello")],
+        deck_name="Language",
+    )
+    build_legacy_apkg(
+        science_path,
+        cloze_notes=["Water is {{c1::H2O}}."],
+        deck_name="Science",
+    )
+
+    language = await _upload_and_wait(client, language_path)
+    science = await _upload_and_wait(client, science_path)
+
+    assert language["status"] == science["status"] == "done"
+    decks = (await client.get("/decks")).json()
+    assert {deck["name"] for deck in decks} == {"Default", "Language", "Science"}
+
+
 async def test_import_not_a_zip_yields_clean_error(client: AsyncClient, tmp_path: Path) -> None:
     await _register(client)
 
