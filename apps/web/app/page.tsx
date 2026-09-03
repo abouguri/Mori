@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api/client";
 import { MoriMark } from "@/components/MoriMark";
+import { MoriPatternPage } from "@/components/MoriPattern";
 
 export default function Home() {
   const router = useRouter();
@@ -30,26 +31,42 @@ export default function Home() {
       });
   }, [router]);
 
-  if (!signedOut) return null;
+  if (!signedOut) {
+    return (
+      <MoriPatternPage variant="resurface">
+        <main className="flex min-h-screen items-center justify-center px-6">
+          <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]">
+            Finding your review path…
+          </p>
+        </main>
+      </MoriPatternPage>
+    );
+  }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6">
-      <MoriMark
-        className="mb-6 h-10 text-[var(--color-chalk)]"
-        nodeFill="var(--color-depth)"
-      />
-      <h1 className="m-0 font-[family-name:var(--font-display)] text-7xl font-extrabold tracking-[-0.045em] text-[var(--color-chalk)]">
-        Mori<span className="text-[var(--color-lime)]">.</span>
-      </h1>
-      <p className="mt-5 max-w-md text-lg text-[var(--color-ink)]">
-        Everything you learn is decaying right now. This is the intervention.
-      </p>
-      <Link
-        href="/login"
-        className="mt-8 w-fit rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-4 py-2 text-sm font-medium text-[var(--color-depth)]"
-      >
-        Sign in
-      </Link>
-    </main>
+    <MoriPatternPage
+      variant="growth"
+      patternStyle={{ "--mori-pattern-opacity": 0.055, "--mori-pattern-scale": 1.18 }}
+    >
+      <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6">
+        <MoriMark
+          className="mb-6 h-10 text-[var(--color-chalk)]"
+          nodeFill="var(--color-depth)"
+          terminalFill="var(--color-lime)"
+        />
+        <h1 className="m-0 font-[family-name:var(--font-display)] text-7xl font-extrabold tracking-[-0.045em] text-[var(--color-chalk)]">
+          Mori<span className="text-[var(--color-lime)]">.</span>
+        </h1>
+        <p className="mt-5 max-w-md text-lg text-[var(--color-ink)]">
+          Everything you learn is decaying right now. This is the intervention.
+        </p>
+        <Link
+          href="/login"
+          className="mt-8 w-fit rounded-[var(--radius-control)] bg-[var(--color-chalk)] px-4 py-2 text-sm font-medium text-[var(--color-depth)]"
+        >
+          Sign in
+        </Link>
+      </main>
+    </MoriPatternPage>
   );
 }

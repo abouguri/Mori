@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CardFrame } from "@/components/CardFrame";
 import { IntervalRibbon } from "@/components/IntervalRibbon";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { MoriPatternPage } from "@/components/MoriPattern";
 import { api, ApiError, type MediaUrl, type PreviewCard, type QueueCounts } from "@/lib/api/client";
 import {
   getCachedQueue,
@@ -325,13 +326,16 @@ export default function StudyPage() {
 
   if (card === undefined) {
     return (
+      <MoriPatternPage variant="focus">
       <main className="mx-auto flex min-h-screen max-w-2xl items-center justify-center px-6">
         <p className="animate-pulse text-[var(--color-muted)]">Loading…</p>
       </main>
+      </MoriPatternPage>
     );
   }
 
   return (
+    <MoriPatternPage variant="focus" patternStyle={{ "--mori-pattern-opacity": 0.065 }}>
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
       <div className="mb-6 flex items-center justify-between font-mono text-xs text-[var(--color-muted)]">
         <button type="button" onClick={() => router.push("/decks")} className="hover:text-[var(--color-chalk)]">
@@ -349,7 +353,7 @@ export default function StudyPage() {
 
       {card === null ? (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-center text-[var(--color-muted)]">
+          <p className="mori-empty-state text-center">
             {!isOnline && outOfCachedCards
               ? "Nothing left cached for offline study."
               : "Nothing due."}
@@ -393,5 +397,6 @@ export default function StudyPage() {
         </div>
       )}
     </main>
+    </MoriPatternPage>
   );
 }

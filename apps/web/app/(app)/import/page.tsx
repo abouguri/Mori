@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, type ImportJob } from "@/lib/api/client";
 import { MoriMark } from "@/components/MoriMark";
+import { MoriPatternPage } from "@/components/MoriPattern";
 
 export default function ImportPage() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function ImportPage() {
   const busy = job !== null && job.status !== "done" && job.status !== "failed";
 
   return (
+    <MoriPatternPage variant="resurface" patternStyle={{ "--mori-pattern-opacity": 0.055 }}>
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <div className="flex items-center gap-3">
@@ -125,5 +127,6 @@ export default function ImportPage() {
         </div>
       )}
     </main>
+    </MoriPatternPage>
   );
 }

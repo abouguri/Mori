@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardFrame } from "@/components/CardFrame";
+import { MoriPatternPage } from "@/components/MoriPattern";
 import { api, ApiError, type Deck, type MediaUrl, type PreviewCard } from "@/lib/api/client";
 
 function DeckLimits({ deck, onSaved }: { deck: Deck; onSaved: (d: Deck) => void }) {
@@ -117,6 +118,7 @@ export default function DeckPreviewPage() {
   }, [media]);
 
   return (
+    <MoriPatternPage variant="deck">
     <main className="mx-auto max-w-3xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
@@ -154,7 +156,7 @@ export default function DeckPreviewPage() {
       )}
 
       {cards !== null && cards.length === 0 && (
-        <p className="text-[var(--color-muted)]">No cards in this deck yet.</p>
+        <p className="mori-empty-state">No cards in this deck yet.</p>
       )}
 
       <div className="flex flex-col gap-8">
@@ -180,5 +182,6 @@ export default function DeckPreviewPage() {
           ))}
       </div>
     </main>
+    </MoriPatternPage>
   );
 }

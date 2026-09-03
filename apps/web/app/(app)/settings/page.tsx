@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, type OptimizeJob, type User } from "@/lib/api/client";
 import { MoriMark } from "@/components/MoriMark";
+import { MoriPatternPage } from "@/components/MoriPattern";
 
 // Mirrors MIN_REVIEWS_FOR_OPTIMIZATION in services/api/app/services/fsrs_optimize.py.
 const MIN_REVIEWS_FOR_OPTIMIZATION = 400;
@@ -164,6 +165,7 @@ export default function SettingsPage() {
   const busy = job !== null && (job.status === "queued" || job.status === "running");
 
   return (
+    <MoriPatternPage variant="grid" patternStyle={{ "--mori-pattern-opacity": 0.05 }}>
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <div className="flex items-center gap-3">
@@ -217,5 +219,6 @@ export default function SettingsPage() {
         )}
       </div>
     </main>
+    </MoriPatternPage>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, ApiError, type DailyCount, type DeckStats } from "@/lib/api/client";
+import { MoriPatternPage } from "@/components/MoriPattern";
 
 function formatDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -77,6 +78,7 @@ export default function DeckStatsPage() {
   }, [params.id, router]);
 
   return (
+    <MoriPatternPage variant="progress">
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-extrabold tracking-[-0.02em] text-[var(--color-chalk)]">
@@ -143,5 +145,6 @@ export default function DeckStatsPage() {
         </div>
       )}
     </main>
+    </MoriPatternPage>
   );
 }

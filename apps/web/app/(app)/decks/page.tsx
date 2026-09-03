@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError, type DeckNode } from "@/lib/api/client";
 import { DeckTree, subtreeCardCount } from "@/components/DeckTree";
 import { MoriMark } from "@/components/MoriMark";
+import { MoriPatternPage } from "@/components/MoriPattern";
 
 export default function DecksPage() {
   const router = useRouter();
@@ -63,11 +64,20 @@ export default function DecksPage() {
     router.push("/login");
   }
 
-  if (decks === null) return null;
+  if (decks === null) {
+    return (
+      <MoriPatternPage variant="lattice">
+        <main className="flex min-h-screen items-center justify-center px-6">
+          <p className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]">Loading your decks…</p>
+        </main>
+      </MoriPatternPage>
+    );
+  }
 
   const pendingCount = pendingDelete ? subtreeCardCount(pendingDelete) : 0;
 
   return (
+    <MoriPatternPage variant="lattice">
     <main className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-y-3">
         <div className="flex items-center gap-3">
@@ -113,7 +123,7 @@ export default function DecksPage() {
       {error && <p className="mb-4 text-sm text-[var(--color-again)]">{error}</p>}
 
       {decks.length === 0 ? (
-        <p className="text-[var(--color-muted)]">
+        <p className="mori-empty-state">
           No decks yet.{" "}
           <Link href="/import" className="underline decoration-[var(--color-muted)]/40 underline-offset-4">
             Import an .apkg file
@@ -127,7 +137,7 @@ export default function DecksPage() {
 
       {pendingDelete && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
+          className="mori-modal-overlay fixed inset-0 z-50 flex items-center justify-center px-6"
           onClick={() => !deleting && setPendingDelete(null)}
         >
           <div
@@ -161,5 +171,6 @@ export default function DecksPage() {
         </div>
       )}
     </main>
+    </MoriPatternPage>
   );
 }
