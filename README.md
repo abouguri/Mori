@@ -205,7 +205,10 @@ outright; GCP now requires a one-time prepayment for some new accounts).
 `Caddy` handles automatic HTTPS via Let's Encrypt; `api` and `worker` are
 the same two Docker images `docker-compose.yml` builds for local dev,
 just pointed at managed services (`docker-compose.prod.yml`) instead of
-local containers.
+local containers. The production Compose stack runs `alembic upgrade head`
+as a one-shot migration service and only starts the API and worker after it
+completes successfully, so application code never starts against an older
+database schema.
 
 ## Development
 
