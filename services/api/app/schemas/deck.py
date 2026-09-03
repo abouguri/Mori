@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,6 +24,7 @@ class DeckRead(BaseModel):
     position: int
     new_per_day: int
     reviews_per_day: int
+    last_used_at: datetime | None
 
 
 class DeckNode(DeckRead):

@@ -8,6 +8,27 @@ import { DeckTree, subtreeCardCount } from "@/components/DeckTree";
 import { MoriMark } from "@/components/MoriMark";
 import { MoriPatternPage } from "@/components/MoriPattern";
 
+function latestUsedDeckId(decks: DeckNode[]): string | null {
+  let latestId: string | null = null;
+  let latestTimestamp = Number.NEGATIVE_INFINITY;
+
+  function visit(nodes: DeckNode[]) {
+    for (const deck of nodes) {
+      if (deck.last_used_at) {
+        const timestamp = Date.parse(deck.last_used_at);
+        if (timestamp > latestTimestamp) {
+          latestId = deck.id;
+          latestTimestamp = timestamp;
+        }
+      }
+      visit(deck.children);
+    }
+  }
+
+  visit(decks);
+  return latestId;
+}
+
 export default function DecksPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -75,6 +96,7 @@ export default function DecksPage() {
   }
 
   const pendingCount = pendingDelete ? subtreeCardCount(pendingDelete) : 0;
+  const latestDeckId = latestUsedDeckId(decks);
 
   return (
     <MoriPatternPage variant="constellation-memory" patternStyle={{ "--mori-pattern-opacity": 0.16 }}>
@@ -132,7 +154,7 @@ export default function DecksPage() {
           — e.g. <code className="font-mono">Parent::Child</code>.
         </p>
       ) : (
-        <DeckTree decks={decks} onDelete={setPendingDelete} />
+        <DeckTree decks={decks} latestDeckId={latestDeckId} onDelete={setPendingDelete} />
       )}
 
       {pendingDelete && (

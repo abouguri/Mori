@@ -5,10 +5,12 @@ import type { DeckNode } from "@/lib/api/client";
 
 export function DeckTree({
   decks,
+  latestDeckId,
   depth = 0,
   onDelete,
 }: {
   decks: DeckNode[];
+  latestDeckId: string | null;
   depth?: number;
   onDelete: (deck: DeckNode) => void;
 }) {
@@ -16,34 +18,52 @@ export function DeckTree({
 
   return (
     <ul className="flex flex-col">
-      {decks.map((deck) => (
-        <li key={deck.id}>
-          <div
-            className="group flex items-center justify-between gap-3 rounded-[var(--radius-control)] px-3 py-2 hover:bg-[var(--color-slate)]"
-            style={{ paddingLeft: `${depth * 20 + 12}px` }}
-          >
-            <Link
-              href={`/decks/${deck.id}`}
-              className="flex items-center gap-2 font-[family-name:var(--font-ui)] text-[var(--color-ink)] hover:text-[var(--color-good)]"
+      {decks.map((deck) => {
+        const isLatest = deck.id === latestDeckId;
+
+        return (
+          <li key={deck.id}>
+            <div
+              className={`group flex items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 py-2 transition-colors ${
+                isLatest
+                  ? "border-[var(--color-lime)] bg-[color-mix(in_srgb,var(--color-lime)_10%,transparent)]"
+                  : "border-transparent hover:bg-[var(--color-slate)]"
+              }`}
+              style={{ paddingLeft: `${depth * 20 + 12}px` }}
             >
-              {deck.name}
-              {subtreeDueCount(deck) > 0 && (
-                <span className="rounded-full bg-[var(--color-lime)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--color-good)]">
-                  {subtreeDueCount(deck)} due
-                </span>
-              )}
-            </Link>
-            <button
-              type="button"
-              onClick={() => onDelete(deck)}
-              className="font-mono text-xs text-[var(--color-muted)] opacity-0 hover:text-[var(--color-again)] group-hover:opacity-100"
-            >
-              delete
-            </button>
-          </div>
-          <DeckTree decks={deck.children} depth={depth + 1} onDelete={onDelete} />
-        </li>
-      ))}
+              <Link
+                href={`/decks/${deck.id}`}
+                className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-[family-name:var(--font-ui)] text-[var(--color-ink)] hover:text-[var(--color-good)]"
+              >
+                {deck.name}
+                {isLatest && (
+                  <span className="rounded-full border border-[var(--color-lime)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--color-good)]">
+                    last used
+                  </span>
+                )}
+                {subtreeDueCount(deck) > 0 && (
+                  <span className="rounded-full bg-[var(--color-lime)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--color-good)]">
+                    {subtreeDueCount(deck)} due
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => onDelete(deck)}
+                className="font-mono text-xs text-[var(--color-muted)] opacity-0 hover:text-[var(--color-again)] group-hover:opacity-100"
+              >
+                delete
+              </button>
+            </div>
+            <DeckTree
+              decks={deck.children}
+              latestDeckId={latestDeckId}
+              depth={depth + 1}
+              onDelete={onDelete}
+            />
+          </li>
+        );
+      })}
     </ul>
   );
 }

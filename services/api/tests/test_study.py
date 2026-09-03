@@ -28,10 +28,15 @@ async def _register_and_import(client: AsyncClient, tmp_path: Path, note_count: 
 
 async def test_study_session_serves_new_cards_by_position(client: AsyncClient, tmp_path: Path) -> None:
     deck_id = await _register_and_import(client, tmp_path, note_count=3)
+    unused = (await client.post("/decks", json={"name": "Unused"})).json()
 
     start = (await client.get(f"/decks/{deck_id}/study")).json()
     assert start["queue"] == {"new": 3, "learning": 0, "due": 0}
     assert start["card"] is not None
+
+    decks = (await client.get("/decks")).json()
+    assert next(deck for deck in decks if deck["id"] == deck_id)["last_used_at"] is not None
+    assert next(deck for deck in decks if deck["id"] == unused["id"])["last_used_at"] is None
 
 
 async def test_prefetch_batch_returns_all_available_cards_up_to_limit(

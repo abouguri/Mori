@@ -68,6 +68,7 @@ export interface Deck {
   position: number;
   new_per_day: number;
   reviews_per_day: number;
+  last_used_at: string | null;
 }
 
 export interface DeckNode extends Deck {

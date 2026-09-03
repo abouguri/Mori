@@ -84,6 +84,7 @@ async def start_study_session(
     deck_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
 ) -> StudySessionStart:
     deck = await _get_owned_deck(db, user, deck_id)
+    deck.last_used_at = datetime.now(UTC)
     card = await queue_builder.next_card(db, user, deck)
     await db.commit()  # persists any stale-bury clearing next_card did
     preview = await build_preview_card(db, card) if card else None
