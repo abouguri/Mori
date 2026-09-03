@@ -2,23 +2,32 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { api, ApiError, type DeckNode } from "@/lib/api/client";
+import {
+  parseRecentDeck,
+  recentDeckServerSnapshot,
+  recentDeckSnapshot,
+  subscribeToRecentDeck,
+} from "@/lib/recent-deck";
 import { DeckTree, subtreeCardCount } from "@/components/DeckTree";
 import { MoriMark } from "@/components/MoriMark";
 import { MoriPatternPage } from "@/components/MoriPattern";
 
-function latestUsedDeckId(decks: DeckNode[]): string | null {
-  let latestId: string | null = null;
-  let latestTimestamp = Number.NEGATIVE_INFINITY;
+interface LatestDeckUsage {
+  id: string;
+  timestamp: number;
+}
+
+function latestUsedDeck(decks: DeckNode[]): LatestDeckUsage | null {
+  let latest: LatestDeckUsage | null = null;
 
   function visit(nodes: DeckNode[]) {
     for (const deck of nodes) {
       if (deck.last_used_at) {
         const timestamp = Date.parse(deck.last_used_at);
-        if (timestamp > latestTimestamp) {
-          latestId = deck.id;
-          latestTimestamp = timestamp;
+        if (!Number.isNaN(timestamp) && (!latest || timestamp > latest.timestamp)) {
+          latest = { id: deck.id, timestamp };
         }
       }
       visit(deck.children);
@@ -26,7 +35,11 @@ function latestUsedDeckId(decks: DeckNode[]): string | null {
   }
 
   visit(decks);
-  return latestId;
+  return latest;
+}
+
+function containsDeck(decks: DeckNode[], id: string): boolean {
+  return decks.some((deck) => deck.id === id || containsDeck(deck.children, id));
 }
 
 export default function DecksPage() {
@@ -37,6 +50,12 @@ export default function DecksPage() {
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<DeckNode | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const recentDeckValue = useSyncExternalStore(
+    subscribeToRecentDeck,
+    recentDeckSnapshot,
+    recentDeckServerSnapshot,
+  );
+  const localRecentDeck = useMemo(() => parseRecentDeck(recentDeckValue), [recentDeckValue]);
 
   useEffect(() => {
     api
@@ -96,7 +115,14 @@ export default function DecksPage() {
   }
 
   const pendingCount = pendingDelete ? subtreeCardCount(pendingDelete) : 0;
-  const latestDeckId = latestUsedDeckId(decks);
+  const serverRecentDeck = latestUsedDeck(decks);
+  const localRecentTimestamp = localRecentDeck ? Date.parse(localRecentDeck.usedAt) : Number.NaN;
+  const localUsageIsNewest =
+    localRecentDeck !== null &&
+    !Number.isNaN(localRecentTimestamp) &&
+    containsDeck(decks, localRecentDeck.id) &&
+    (!serverRecentDeck || localRecentTimestamp > serverRecentDeck.timestamp);
+  const latestDeckId = localUsageIsNewest ? localRecentDeck.id : (serverRecentDeck?.id ?? null);
 
   return (
     <MoriPatternPage variant="constellation-memory" patternStyle={{ "--mori-pattern-opacity": 0.16 }}>

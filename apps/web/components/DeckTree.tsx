@@ -24,20 +24,26 @@ export function DeckTree({
         return (
           <li key={deck.id}>
             <div
-              className={`group flex items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 py-2 transition-colors ${
+              className={`group relative flex items-center justify-between gap-3 overflow-hidden rounded-[var(--radius-control)] border px-3 py-2 transition-colors ${
                 isLatest
-                  ? "border-[var(--color-lime)] bg-[color-mix(in_srgb,var(--color-lime)_10%,transparent)]"
+                  ? "border-[var(--color-lime)] bg-[var(--color-slate)]"
                   : "border-transparent hover:bg-[var(--color-slate)]"
               }`}
               style={{ paddingLeft: `${depth * 20 + 12}px` }}
             >
+              {isLatest && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-y-2 left-1 w-1 rounded-full bg-[var(--color-lime)]"
+                />
+              )}
               <Link
                 href={`/decks/${deck.id}`}
                 className="flex min-w-0 flex-1 flex-wrap items-center gap-2 font-[family-name:var(--font-ui)] text-[var(--color-ink)] hover:text-[var(--color-good)]"
               >
                 {deck.name}
                 {isLatest && (
-                  <span className="rounded-full border border-[var(--color-lime)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--color-good)]">
+                  <span className="rounded-full bg-[var(--color-lime)] px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--color-good)]">
                     last used
                   </span>
                 )}

@@ -7,6 +7,7 @@ import { IntervalRibbon } from "@/components/IntervalRibbon";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MoriPatternPage } from "@/components/MoriPattern";
 import { api, ApiError, type MediaUrl, type PreviewCard, type QueueCounts } from "@/lib/api/client";
+import { rememberRecentDeck } from "@/lib/recent-deck";
 import {
   getCachedQueue,
   loadOfflineMediaUrls,
@@ -115,6 +116,9 @@ export default function StudyPage() {
   }, [sync]);
 
   useEffect(() => {
+    // Record this before the network request so returning from an offline or
+    // cached study session still updates the deck list immediately.
+    rememberRecentDeck(deckId);
     api
       .startStudySession(deckId)
       .then(async (session) => {
