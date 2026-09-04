@@ -472,7 +472,7 @@
   }
 
   .mori-creative-pattern-temporal-orbits .temporal-orbit {
-    animation: mori-orbit-spin calc(32s / var(--mori-pattern-speed)) linear infinite;
+    animation: mori-orbit-spin calc(32s / var(--mori-pattern-speed)) linear infinite alternate;
   }
 
   .mori-creative-pattern-temporal-orbits .orbit-2 { animation-duration: calc(41s / var(--mori-pattern-speed)); }
